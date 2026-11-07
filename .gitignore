@@ -1,0 +1,11 @@
+# Android / Gradle
+/build
+/app/build
+/.gradle
+/local.properties
+/.idea
+*.iml
+*.apk
+.kotlin/
+# Superpowers scratch
+/.superpowers/
