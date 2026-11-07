@@ -9,3 +9,5 @@
 .kotlin/
 # Superpowers scratch
 /.superpowers/
+# Agent worktrees
+/.claude/worktrees/
