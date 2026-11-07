@@ -1,0 +1,9 @@
+[
+  {"id":"red","top":"#C8102E","bottom":"#7A0019","accent":"#FFFFFF","pattern":"dots"},
+  {"id":"dark","top":"#2A2A2A","bottom":"#0A0A0A","accent":"#E50914","pattern":"none"},
+  {"id":"blue","top":"#1A98FF","bottom":"#0B3D91","accent":"#FFFFFF","pattern":"rings"},
+  {"id":"purple","top":"#6B3FA0","bottom":"#2B1055","accent":"#FFFFFF","pattern":"grid"},
+  {"id":"grey","top":"#4A4F57","bottom":"#1E2126","accent":"#FFFFFF","pattern":"dots"},
+  {"id":"grid","top":"#2C3E50","bottom":"#10171E","accent":"#FFFFFF","pattern":"grid"},
+  {"id":"default","top":"#1E1B2E","bottom":"#0B0A12","accent":"#FFFFFF","pattern":"digits"}
+]
