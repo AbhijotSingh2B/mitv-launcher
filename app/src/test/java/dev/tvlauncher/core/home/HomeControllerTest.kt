@@ -108,6 +108,45 @@ class HomeControllerTest {
     }
 
     @Test
+    fun throwingActionBecomesFailed() {
+        val throwing = object : Actions {
+            override fun openApp(packageName: String): Boolean = throw IllegalStateException("boom")
+            override fun switchInput(inputId: String): Boolean = throw IllegalStateException("boom")
+            override fun openSettings(): Boolean = throw IllegalStateException("boom")
+        }
+        val c = DefaultHomeController(
+            listOf(
+                AppTileSpec("com.yt", null, "default"),
+                HdmiTileSpec(1, null, "default"),
+                SettingsTileSpec("default"),
+            ),
+            emptyMap(),
+            FakeApps(listOf(yt)),
+            FakeInputs(listOf(HdmiInput("in1", "HDMI 1"))),
+            throwing,
+        )
+        val tiles = c.tiles()
+        assertEquals(LaunchResult.Failed("Couldn't open YouTube"), c.open(tiles[0]))
+        assertEquals(LaunchResult.Failed("Couldn't open HDMI 1"), c.open(tiles[1]))
+        assertEquals(LaunchResult.Failed("Couldn't open Settings"), c.open(tiles[2]))
+        assertEquals(LaunchResult.Failed("Couldn't open YouTube"), c.openApp(yt))
+    }
+
+    @Test
+    fun duplicateSpecsAreDeduplicated() {
+        val c = controller(
+            listOf(
+                AppTileSpec("com.yt", null, "default"),
+                AllAppsTileSpec("default"),
+                AppTileSpec("com.yt", "Other", "default"),
+                AllAppsTileSpec("default"),
+            ),
+        )
+        assertEquals(listOf("app:com.yt", "allApps"), c.tiles().map { it.key })
+        assertEquals("YouTube", c.tiles().first().label)
+    }
+
+    @Test
     fun settingsTileOpensSettings() {
         val c = controller(listOf(SettingsTileSpec("default")))
         assertEquals(LaunchResult.Opened, c.open(c.tiles().single()))

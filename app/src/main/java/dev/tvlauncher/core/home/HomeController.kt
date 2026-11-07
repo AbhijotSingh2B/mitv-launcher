@@ -58,6 +58,13 @@ class DefaultHomeController(
     override fun tiles(): List<HomeTile> {
         val installed = apps.installedTvApps().associateBy { it.packageName }
         val hdmi = inputs.hdmiInputs()
+        return buildTiles(installed, hdmi).distinctBy { it.key }
+    }
+
+    private fun buildTiles(
+        installed: Map<String, InstalledApp>,
+        hdmi: List<dev.tvlauncher.core.catalog.HdmiInput>,
+    ): List<HomeTile> {
         return specs.mapNotNull { spec ->
             val theme = themes.themeFor(spec.theme)
             when (spec) {
@@ -94,15 +101,17 @@ class DefaultHomeController(
         val ok = when (val target = tile.target) {
             null -> false
             Target.AllApps -> return LaunchResult.ShowAllApps
-            is Target.App -> actions.openApp(target.packageName)
-            is Target.Hdmi -> actions.switchInput(target.inputId)
-            Target.Settings -> actions.openSettings()
+            is Target.App -> safely { actions.openApp(target.packageName) }
+            is Target.Hdmi -> safely { actions.switchInput(target.inputId) }
+            Target.Settings -> safely { actions.openSettings() }
         }
         return if (ok) LaunchResult.Opened else LaunchResult.Failed("Couldn't open ${tile.label}")
     }
 
     override fun openApp(app: InstalledApp): LaunchResult =
-        if (actions.openApp(app.packageName)) LaunchResult.Opened else LaunchResult.Failed("Couldn't open ${app.label}")
+        if (safely { actions.openApp(app.packageName) }) LaunchResult.Opened else LaunchResult.Failed("Couldn't open ${app.label}")
+
+    private fun safely(block: () -> Boolean): Boolean = runCatching(block).getOrDefault(false)
 
     private companion object {
         const val HINT_OPEN = "Press OK to open"

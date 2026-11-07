@@ -28,5 +28,7 @@ class AndroidActions(private val context: Context) : Actions {
         false
     } catch (e: SecurityException) {
         false
+    } catch (e: RuntimeException) {
+        false
     }
 }
