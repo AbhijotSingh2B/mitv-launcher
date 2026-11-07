@@ -34,6 +34,42 @@ class ConfigTest {
     }
 
     @Test
+    fun wrongTypedFieldsAreSkippedNotThrown() {
+        val json = """[
+            {"type":"app","package":{},"theme":"red"},
+            {"type":"app","package":"a.b","label":[],"theme":"red"},
+            {"type":"app","package":"c.d","label":"X","theme":{}},
+            {"type":"hdmi","port":{},"theme":"red"},
+            {"type":{},"theme":"red"},
+            "stray",
+            {"type":"settings","theme":"grid"}
+        ]"""
+        val specs = ConfigParser.tiles(json)
+        assertEquals(3, specs.size)
+        assertEquals(AppTileSpec("a.b", null, "red"), specs[0])
+        assertEquals(AppTileSpec("c.d", "X", "default"), specs[1])
+        assertEquals(SettingsTileSpec("grid"), specs[2])
+    }
+
+    @Test
+    fun wrongTypedThemeFieldsAreSkipped() {
+        val json = """[
+            {"id":{},"top":"#000000","bottom":"#000000","accent":"#FFFFFF"},
+            {"id":"bad","top":[],"bottom":"#000000","accent":"#FFFFFF"},
+            {"id":"ok","top":"#112233","bottom":"#000000","accent":"#FFFFFF","pattern":{}}
+        ]"""
+        val themes = ConfigParser.themes(json)
+        assertEquals(setOf("ok"), themes.keys)
+        assertEquals(Pattern.NONE, themes.getValue("ok").pattern)
+    }
+
+    @Test
+    fun emptyOrAllInvalidTilesFallBackToDefaults() {
+        assertEquals(ConfigParser.DEFAULT_TILES, ConfigParser.tiles("[]"))
+        assertEquals(ConfigParser.DEFAULT_TILES, ConfigParser.tiles("""[{"type":"weather"}]"""))
+    }
+
+    @Test
     fun malformedJsonFallsBackToDefaults() {
         assertEquals(ConfigParser.DEFAULT_TILES, ConfigParser.tiles("{not json"))
     }

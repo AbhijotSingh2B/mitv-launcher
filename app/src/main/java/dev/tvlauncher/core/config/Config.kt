@@ -6,7 +6,7 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
-import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.JsonPrimitive
 
 sealed interface TileSpec {
     val theme: String
@@ -51,7 +51,7 @@ object ConfigParser {
 
     fun tiles(json: String): List<TileSpec> = try {
         val arr = this.json.parseToJsonElement(json) as? JsonArray ?: return DEFAULT_TILES
-        arr.mapNotNull { el -> (el as? JsonObject)?.let(::tile) }
+        arr.mapNotNull { el -> (el as? JsonObject)?.let(::tile) }.ifEmpty { DEFAULT_TILES }
     } catch (e: SerializationException) {
         DEFAULT_TILES
     } catch (e: IllegalArgumentException) {
@@ -67,7 +67,9 @@ object ConfigParser {
         emptyMap()
     }
 
-    private fun JsonObject.str(key: String): String? = this[key]?.jsonPrimitive?.contentOrNull
+    private fun JsonObject.str(key: String): String? = (this[key] as? JsonPrimitive)?.contentOrNull
+
+    private fun JsonObject.int(key: String): Int? = (this[key] as? JsonPrimitive)?.intOrNull
 
     private fun tile(o: JsonObject): TileSpec? {
         return try {
@@ -75,7 +77,7 @@ object ConfigParser {
             val label = o.str("label")
             when (o.str("type")) {
                 "app" -> AppTileSpec(o.str("package") ?: return null, label, theme)
-                "hdmi" -> HdmiTileSpec(o["port"]?.jsonPrimitive?.intOrNull ?: return null, label, theme)
+                "hdmi" -> HdmiTileSpec(o.int("port") ?: return null, label, theme)
                 "allApps" -> AllAppsTileSpec(theme)
                 "settings" -> SettingsTileSpec(theme)
                 else -> null
