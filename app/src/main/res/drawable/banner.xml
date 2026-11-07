@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp"
+    android:height="180dp"
+    android:viewportWidth="320"
+    android:viewportHeight="180">
+    <path
+        android:fillColor="#FF14161C"
+        android:pathData="M0,0h320v180h-320z" />
+    <!-- "Home" lettering: H -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M78,64h8v20h14v-20h8v52h-8v-24h-14v24h-8z" />
+    <!-- o -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M132,84a16,16 0,1 0,0.01 0zM132,92a8,8 0,1 1,-0.01 0z" />
+    <!-- m -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M158,84h8v4c3,-4 7,-5 11,-5c5,0 8,2 10,6c3,-4 7,-6 12,-6c8,0 12,5 12,14v19h-8v-18c0,-5 -2,-8 -6,-8c-5,0 -8,3 -8,9v17h-8v-18c0,-5 -2,-8 -6,-8c-5,0 -8,3 -8,9v17h-8z" />
+    <!-- e (approximate) -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M234,100a16,16 0,1 0,32 0a16,16 0,1 0,-32 0zM242,96h16a8,8 0,0 0,-16 0zM242,104a8,8 0,0 0,15 3h8a16,16 0,0 1,-31 -3z" />
+</vector>
