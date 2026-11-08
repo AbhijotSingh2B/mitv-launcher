@@ -70,9 +70,27 @@ to keep memory low. There is no blur, because real-time blur needs Android 12 or
   when Android asks which app to use for Home.
 - The app never disables any system package. Any ADB clean-up is a manual, documented, reversible
   step.
-- If the Mi remote's Home button does not reach the app (one report says it sends `KEYCODE_ALL_APPS`),
-  an optional accessibility service that catches that key is added as a follow-up. This needs to be checked
-  on the real TV first.
+- **Amended 2026-11-08: the Home button service.** On the real TV the alias alone can't win Home.
+  Google TV Home (`com.google.android.tvlauncher`) is a system app whose HOME filter has priority 2,
+  and a normal app's filter is capped at 0. So Android always resolves Home to it, shows no chooser,
+  and ignores `cmd package set-home-activity`. The launcher therefore ships `system/HomeButtonService`,
+  an accessibility service the user switches on in Settings > Device Preferences > Accessibility >
+  "Home button for Home launcher":
+  - It reads only key events and the package and class of the window in front
+    (`canRetrieveWindowContent="false"`). It logs and stores nothing.
+  - It consumes `KEYCODE_HOME` only, and opens this launcher on release. A held Home is consumed too,
+    so the system's long-press Home action doesn't run while the service is on.
+  - When Google TV Home's `MainActivity` appears on its own (boot or wake), it replaces it with this
+    launcher.
+  - When PatchWall (`com.mitv.tvhome.atv`) opens itself within **3 minutes of boot**, it replaces it.
+    After that window, PatchWall opens normally (from All apps).
+  - **Escape hatch:** the "TV home" pill (under the tile row, and on the About screen) opens Google TV
+    Home on purpose, and the service leaves it alone until the user goes elsewhere.
+  - **To turn it off:** Settings > Device Preferences > Accessibility > the service > Enable off, or
+    "Home button opens this launcher" in Launcher settings.
+- **Boot receiver.** `system/BootReceiver` opens the launcher after `BOOT_COMPLETED` only when
+  "Open at start-up" is on **and** the user has opted in: the service is enabled, or "Use as home screen"
+  is on. A fresh install never takes over Home.
 
 ## Escape hatches
 
@@ -110,6 +128,16 @@ The user directed these during the home-screen redesign. They are part of v1.
   drawn as one full-colour pattern bitmap.
 - **Settings chooser.** The Settings tile opens a choice of **Launcher settings** or **TV settings** (the
   Android settings), instead of opening the Android settings directly. Setup no longer shows a version line.
+- **Nuvio background (`prism`, 2026-11-08).** Nuvio's nested logo triangles ripple outward in its
+  cyan-to-violet-to-pink gradient with a soft glow and a few small play-triangle sparks. It is a full-colour
+  pattern bitmap like `ribbons`, rendered once and cached.
+- **Shortcut pills (2026-11-08).** Thin pills under the tile row: "TV home" first, then the apps the user
+  picked. Down from the row reaches them, Up returns to the selected tile, and the hint names what OK opens.
+- **Home row apps and Shortcuts pickers (2026-11-08).** Launcher settings has two pickers: apps added as tiles
+  just before All apps, or as pills. Each has an on-screen A–Z/0–9 keyboard, because the TV's default
+  keyboard is the phone-only remote bridge. Lists are saved as package names. Uninstalled apps are skipped
+  when the home screen is built.
+- **Home button service and boot receiver (2026-11-08).** See "Home button and PatchWall" above.
 - **Release build.** R8 minify and resource shrinking (needed for smooth focus moves on the 1 GB TV), signed
   with the local debug key for sideloading.
 

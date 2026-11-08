@@ -102,7 +102,10 @@ adb exec-out screencap -p > shot.png                 # see what the TV shows
 
 ## Don'ts
 
+- Don't push to `main`, merge branches or change the GitHub default branch unless the repo owner asks. Work on a branch.
+
 - Don't add heavy dependencies (image loaders, DI frameworks, analytics). Runtime dependencies are AndroidX only.
-- Don't commit APKs, keystores, `local.properties` or screenshots of private camera feeds.
-- Don't disable or uninstall the TV's stock launchers from code or scripts. The Home button service exists so that's never needed.
+- Don't commit APKs, keystores or `local.properties`. Never capture or commit screenshots of an HDMI camera input (a home CCTV feed is private).
+- Don't disable or uninstall any package, including the TV's stock launchers, from code or scripts (`pm disable`, `pm uninstall`). The Home button service exists so that's never needed.
+- Don't let a fresh install take over Home. Anything that opens the launcher by itself (boot, the service) must sit behind an opt-in the user switched on.
 - Don't read screen content in the accessibility service. It only needs key events and the class name of the window in front.

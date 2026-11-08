@@ -168,7 +168,7 @@ fun LauncherSettingsScreen(onOpenSetup: () -> Unit, onOpenPicker: (PickerMode) -
                     }
                 },
             ),
-            SettingItem("Open at start-up", "Show this launcher when the TV turns on", { if (settings.openOnStartup) "On" else "Off" }, {
+            SettingItem("Open at start-up", "Show this launcher when the TV turns on (needs the Home button service)", { if (settings.openOnStartup) "On" else "Off" }, {
                 settings.openOnStartup = !settings.openOnStartup
             }),
             SettingItem("Home screen setup", "Use as home screen, and more", { "Open" }, { onOpenSetup() }, isAction = true),

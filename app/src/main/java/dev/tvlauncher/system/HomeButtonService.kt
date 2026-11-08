@@ -34,7 +34,9 @@ class HomeButtonService : AccessibilityService() {
 
     override fun onKeyEvent(event: KeyEvent): Boolean {
         if (event.keyCode != KeyEvent.KEYCODE_HOME || !app.settings.homeButtonOpensLauncher) return false
-        // Consume both halves of a short press; act on release. A held Home is left alone.
+        // Consume the press and act on release. The first DOWN is consumed before we can tell a short
+        // press from a long one, so a held Home is swallowed too: the system's long-press Home action
+        // doesn't run while this service is on.
         if (event.action == KeyEvent.ACTION_UP && !event.isCanceled && event.repeatCount == 0) openLauncher()
         return event.repeatCount == 0
     }

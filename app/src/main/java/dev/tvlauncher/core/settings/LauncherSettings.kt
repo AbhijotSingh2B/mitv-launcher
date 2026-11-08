@@ -48,7 +48,10 @@ class LauncherSettings(context: Context) {
         get() = prefs.getBoolean(KEY_HOME_BUTTON, true)
         set(v) = prefs.edit().putBoolean(KEY_HOME_BUTTON, v).apply()
 
-    /** Open this launcher when the TV finishes starting up. */
+    /**
+     * Open this launcher when the TV finishes starting up. On by default, but it only takes effect
+     * after the user opts in (Home button service or "Use as home screen"); see StartupGate.
+     */
     var openOnStartup: Boolean
         get() = prefs.getBoolean(KEY_OPEN_ON_STARTUP, true)
         set(v) = prefs.edit().putBoolean(KEY_OPEN_ON_STARTUP, v).apply()

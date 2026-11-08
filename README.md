@@ -159,7 +159,7 @@ Then make the Home button open it. On many Android TVs, Google TV Home is a syst
 1. On the TV, open **Settings → Device Preferences → Accessibility → Home button for Home launcher** and turn on **Enable**.
 2. Optional, on Xiaomi TVs: in **Settings → Device Preferences → PatchWall**, turn off **Set PatchWall as default launcher**.
 
-The service only sees button presses and which app is in front. It never reads what's on screen. On TVs whose Home button already shows a chooser, you can instead open **Home Setup**, turn on **Use as home screen**, and pick **Always**. More detail, and how to undo it, is in [docs/SETUP-ON-TV.md](docs/SETUP-ON-TV.md).
+The service only sees button presses and which app is in front. It never reads what's on screen. While it's on, a held Home press is caught too, so the system's long-press Home action doesn't run. On TVs whose Home button already shows a chooser, you can instead open **Home Setup**, turn on **Use as home screen**, and pick **Always**. More detail, and how to undo it, is in [docs/SETUP-ON-TV.md](docs/SETUP-ON-TV.md).
 
 ## Make it yours
 
