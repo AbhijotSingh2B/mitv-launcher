@@ -48,6 +48,7 @@ import dev.tvlauncher.ui.home.Clock
 import dev.tvlauncher.ui.home.Mark
 import dev.tvlauncher.ui.home.MarkImage
 import dev.tvlauncher.ui.home.NightBadge
+import dev.tvlauncher.ui.home.TvHomePill
 import dev.tvlauncher.ui.theme.Emphasized
 import dev.tvlauncher.ui.theme.Poppins
 import dev.tvlauncher.ui.theme.ThemedBackground
@@ -84,7 +85,7 @@ private class Section(val title: String, val lines: List<Line>)
  * Cards are focusable so the D-pad scrolls through them on the 540 dp tall screen. Back returns home.
  */
 @Composable
-fun AboutScreen(theme: ThemeSpec, version: String, onBack: () -> Unit) {
+fun AboutScreen(theme: ThemeSpec, version: String, onBack: () -> Unit, onOpenTvHome: () -> Unit = {}) {
     BackHandler(onBack = onBack)
     val night = rememberIsNight()
     val reduceMotion = rememberReduceMotion() || rememberSetting { it.reduceMotion }
@@ -120,13 +121,14 @@ fun AboutScreen(theme: ThemeSpec, version: String, onBack: () -> Unit) {
                 Key("◀ ▶", "Move between tiles"),
                 Key("OK", "Open the selected tile"),
                 Key("Back", "Does nothing on home, so you never fall out by accident"),
-                Key("Home", "Always brings you back here"),
+                Key("Home", "Brings you back here"),
+                Key("▼", "Shortcut pills: TV home, and apps you add in Launcher settings"),
             ),
         ),
         Section(
             "The Menu button",
             listOf(
-                Key("Press", "Launcher settings: night mode, Cameras at start-up, reduce motion"),
+                Key("Press", "Launcher settings: night mode, home row apps, shortcuts and more"),
                 Key("Hold", "Home setup: make this your home screen"),
             ),
         ),
@@ -178,6 +180,9 @@ fun AboutScreen(theme: ThemeSpec, version: String, onBack: () -> Unit) {
                 Text("Your TV,\nyour way", style = Title)
                 Spacer(Modifier.height(10.dp))
                 Text("Everything you need to know about this launcher.", style = Body)
+                Spacer(Modifier.height(22.dp))
+                // Sometimes you need the TV's own home screen (its inputs, apps and recommendations).
+                TvHomePill(night = night, reduceMotion = reduceMotion, onClick = onOpenTvHome)
             }
             LazyColumn(
                 // Starts below the clock, so scrolled cards never pass behind it.

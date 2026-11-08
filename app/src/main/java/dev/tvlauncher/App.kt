@@ -25,6 +25,9 @@ class App : Application() {
     lateinit var settings: LauncherSettings
         private set
 
+    /** True while the user is on Google TV Home by choice (the "TV home" pill), so it isn't replaced. */
+    @Volatile var tvHomeRequested = false
+
     private var startupHandled = false
 
     override fun onCreate() {
@@ -33,7 +36,11 @@ class App : Application() {
         settings = LauncherSettings(this)
         val tiles = ConfigParser.tiles(readAsset("tiles.json"))
         val themes = ConfigParser.themes(readAsset("themes.json"))
-        controller = DefaultHomeController(tiles, themes, catalog, AndroidInputCatalog(this), AndroidActions(this))
+        controller = DefaultHomeController(
+            tiles, themes, catalog, AndroidInputCatalog(this), AndroidActions(this) { tvHomeRequested = true },
+            rowApps = { settings.homeRowApps },
+            shortcutApps = { settings.shortcutApps },
+        )
 
         // "Open Cameras when the TV turns on": waking from standby turns the screen on. SCREEN_ON can only be
         // received by a runtime receiver, so this lives as long as the launcher process (kept alive as HOME).

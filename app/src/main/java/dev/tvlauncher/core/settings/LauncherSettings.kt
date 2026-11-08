@@ -43,6 +43,32 @@ class LauncherSettings(context: Context) {
         get() = prefs.getBoolean(KEY_NIGHT_BADGE, true)
         set(v) = prefs.edit().putBoolean(KEY_NIGHT_BADGE, v).apply()
 
+    /** With the Home button service on: the remote's Home button opens this launcher. */
+    var homeButtonOpensLauncher: Boolean
+        get() = prefs.getBoolean(KEY_HOME_BUTTON, true)
+        set(v) = prefs.edit().putBoolean(KEY_HOME_BUTTON, v).apply()
+
+    /** Open this launcher when the TV finishes starting up. */
+    var openOnStartup: Boolean
+        get() = prefs.getBoolean(KEY_OPEN_ON_STARTUP, true)
+        set(v) = prefs.edit().putBoolean(KEY_OPEN_ON_STARTUP, v).apply()
+
+    /** Apps the user added to the home row as tiles, in order (package names). */
+    var homeRowApps: List<String>
+        get() = readList(KEY_ROW_APPS)
+        set(v) = writeList(KEY_ROW_APPS, v)
+
+    /** Apps shown as shortcut pills under the home row, in order (package names). */
+    var shortcutApps: List<String>
+        get() = readList(KEY_SHORTCUTS)
+        set(v) = writeList(KEY_SHORTCUTS, v)
+
+    private fun readList(key: String): List<String> =
+        prefs.getString(key, null).orEmpty().split(SEP).map { it.trim() }.filter { it.isNotEmpty() }.distinct()
+
+    private fun writeList(key: String, v: List<String>) =
+        prefs.edit().putString(key, v.distinct().joinToString(SEP.toString())).apply()
+
     fun registerListener(l: SharedPreferences.OnSharedPreferenceChangeListener) =
         prefs.registerOnSharedPreferenceChangeListener(l)
 
@@ -56,6 +82,15 @@ class LauncherSettings(context: Context) {
         private const val KEY_CAMERAS_ON_START = "open_cameras_on_start"
         private const val KEY_REDUCE_MOTION = "reduce_motion"
         private const val KEY_NIGHT_BADGE = "show_night_badge"
+        private const val KEY_ROW_APPS = "home_row_apps"
+        private const val KEY_HOME_BUTTON = "home_button_opens_launcher"
+        private const val KEY_OPEN_ON_STARTUP = "open_on_startup"
+        private const val KEY_SHORTCUTS = "shortcut_apps"
+        private const val SEP = ',' // package names never contain commas
+
+        /** [list] with [item] added at the end, or removed if it was already there. */
+        fun toggled(list: List<String>, item: String): List<String> =
+            if (item in list) list - item else list + item
 
         /** Whether [hour] falls in the night window [start, end), which may wrap past midnight. */
         fun isNightHour(hour: Int, start: Int, end: Int): Boolean = when {

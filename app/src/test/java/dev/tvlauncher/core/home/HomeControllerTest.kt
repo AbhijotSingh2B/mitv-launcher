@@ -184,4 +184,33 @@ class HomeControllerTest {
         assertFalse(tiles.first().available)
         assertTrue(c.allApps().isEmpty())
     }
+
+    @Test
+    fun addedAppsGoJustBeforeAllAppsAndSkipDuplicatesAndMissingApps() {
+        val nf = InstalledApp("com.nf", "Netflix")
+        val kodi = InstalledApp("org.kodi", "Kodi")
+        val c = DefaultHomeController(
+            listOf(AppTileSpec("com.yt", null, "default"), AllAppsTileSpec("default"), SettingsTileSpec("default")),
+            emptyMap(), FakeApps(listOf(yt, nf, kodi)), FakeInputs(emptyList()), actions,
+            rowApps = { listOf("org.kodi", "com.yt", "com.gone") },
+        )
+        assertEquals(listOf("app:com.yt", "app:org.kodi", "allApps", "settings"), c.tiles().map { it.key })
+        assertEquals("Kodi", c.tiles()[1].label)
+    }
+
+    @Test
+    fun shortcutsFollowTheChosenOrderAndSkipMissingApps() {
+        val nf = InstalledApp("com.nf", "Netflix")
+        val c = DefaultHomeController(
+            emptyList(), emptyMap(), FakeApps(listOf(yt, nf)), FakeInputs(emptyList()), actions,
+            shortcutApps = { listOf("com.nf", "com.gone", "com.yt") },
+        )
+        assertEquals(listOf("com.nf", "com.yt"), c.shortcuts().map { it.packageName })
+    }
+
+    @Test
+    fun tvHomeFailureBecomesMessage() {
+        val c = controller(emptyList())
+        assertEquals(LaunchResult.Failed("Couldn't open the TV home screen"), c.openTvHome())
+    }
 }

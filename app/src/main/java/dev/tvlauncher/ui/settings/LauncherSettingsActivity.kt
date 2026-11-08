@@ -56,6 +56,7 @@ import dev.tvlauncher.core.config.Pattern
 import dev.tvlauncher.core.config.ThemeSpec
 import dev.tvlauncher.core.settings.LauncherSettings
 import dev.tvlauncher.core.settings.NightMode
+import dev.tvlauncher.system.HomeButtonService
 import dev.tvlauncher.ui.home.Clock
 import dev.tvlauncher.ui.home.NightBadge
 import dev.tvlauncher.ui.setup.SetupActivity
@@ -73,6 +74,7 @@ class LauncherSettingsActivity : ComponentActivity() {
         setContent {
             LauncherSettingsScreen(
                 onOpenSetup = { startActivity(Intent(this, SetupActivity::class.java)) },
+                onOpenPicker = { mode -> startActivity(AppPickerActivity.intent(this, mode)) },
             )
         }
     }
@@ -90,6 +92,8 @@ private fun hourLabel(h: Int): String = when {
     else -> "${h - 12} pm"
 }
 
+private fun countLabel(n: Int) = if (n == 0) "Add" else "$n added"
+
 private val StartHours = listOf(19, 20, 21, 22, 23, 0)
 private val EndHours = listOf(4, 5, 6, 7, 8, 9)
 
@@ -99,15 +103,31 @@ private fun <T> List<T>.step(current: T, dir: Int): T {
 }
 
 @Composable
-fun LauncherSettingsScreen(onOpenSetup: () -> Unit) {
+fun LauncherSettingsScreen(onOpenSetup: () -> Unit, onOpenPicker: (PickerMode) -> Unit = {}) {
     val context = LocalContext.current
     val settings = remember { LauncherSettings(context) }
     // Bumped on every change so the rows re-read their values.
     var version by remember { mutableIntStateOf(0) }
     val night = rememberIsNight()
 
+    // Back from the app picker: re-read the counts.
+    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) version++
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     val rows = remember {
         listOf(
+            SettingItem("Home row apps", "Add any app as a tile on the home row", { countLabel(settings.homeRowApps.size) }, {
+                onOpenPicker(PickerMode.ROW)
+            }, isAction = true),
+            SettingItem("Shortcuts", "Small pills under the home row for any app", { countLabel(settings.shortcutApps.size) }, {
+                onOpenPicker(PickerMode.SHORTCUTS)
+            }, isAction = true),
             SettingItem("Night mode", "Darker, dimmer colours for a dark room", { settings.nightMode.label }, { d ->
                 settings.nightMode = NightMode.entries.step(settings.nightMode, d)
             }),
@@ -125,6 +145,31 @@ fun LauncherSettingsScreen(onOpenSetup: () -> Unit) {
             }),
             SettingItem("Reduce motion", "No tile lift or sliding text", { if (settings.reduceMotion) "On" else "Off" }, {
                 settings.reduceMotion = !settings.reduceMotion
+            }),
+            SettingItem(
+                "Home button opens this launcher",
+                "Turn on in Settings › Device Preferences › Accessibility › Home button for Home launcher",
+                {
+                    when {
+                        !HomeButtonService.isEnabled(context) -> "Set up"
+                        settings.homeButtonOpensLauncher -> "On"
+                        else -> "Off"
+                    }
+                },
+                {
+                    if (HomeButtonService.isEnabled(context)) {
+                        settings.homeButtonOpensLauncher = !settings.homeButtonOpensLauncher
+                    } else {
+                        // ACTION_ACCESSIBILITY_SETTINGS resolves to an empty stub on this Mi TV, so open the
+                        // main Settings; the row's description gives the path to the switch.
+                        runCatching {
+                            context.startActivity(Intent(android.provider.Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                        }
+                    }
+                },
+            ),
+            SettingItem("Open at start-up", "Show this launcher when the TV turns on", { if (settings.openOnStartup) "On" else "Off" }, {
+                settings.openOnStartup = !settings.openOnStartup
             }),
             SettingItem("Home screen setup", "Use as home screen, and more", { "Open" }, { onOpenSetup() }, isAction = true),
         )

@@ -116,6 +116,9 @@ fun HomeScreen(
     onOpenLauncherSettings: () -> Unit = {},
 ) {
     var tiles by remember { mutableStateOf(controller.tiles()) }
+    var shortcuts by remember { mutableStateOf(controller.shortcuts()) }
+    // Set while a shortcut pill has focus, so the hint names what OK will open.
+    var pillLabel by remember { mutableStateOf<String?>(null) }
     var focusedKey by rememberSaveable { mutableStateOf<String?>(null) }
     var switchingTo by remember { mutableStateOf<HomeTile?>(null) }
     // The Settings tile opens a chooser (Launcher settings or TV settings) instead of TV settings directly.
@@ -134,6 +137,7 @@ fun HomeScreen(
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 tiles = controller.tiles()
+                shortcuts = controller.shortcuts()
                 switchingTo = null
                 focusTick++
             }
@@ -206,7 +210,11 @@ fun HomeScreen(
                 Column {
                     Text(tile?.label.orEmpty(), style = TitleStyle, maxLines = 1)
                     HintLine(
-                        if (tile?.available == false) "Not available on this TV" else tile?.hint.orEmpty(),
+                        when {
+                            pillLabel != null -> "Press OK to open $pillLabel"
+                            tile?.available == false -> "Not available on this TV"
+                            else -> tile?.hint.orEmpty()
+                        },
                         Modifier.padding(top = 2.dp, start = 3.dp),
                     )
                 }
@@ -236,6 +244,28 @@ fun HomeScreen(
                 },
             )
         }
+
+        ShortcutPills(
+            shortcuts = shortcuts,
+            icon = icon,
+            night = night,
+            reduceMotion = reduceMotion,
+            enabled = chooserFor == null,
+            gutter = Gutter - 6.dp,
+            upTarget = requester,
+            onFocusedLabel = { label, f -> if (f) pillLabel = label else if (pillLabel == label) pillLabel = null },
+            onTvHome = {
+                val r = controller.openTvHome()
+                if (r is LaunchResult.Failed) failure = r.message
+            },
+            onOpen = { app ->
+                val r = controller.openApp(app)
+                if (r is LaunchResult.Failed) failure = r.message
+            },
+            modifier = Modifier
+                .padding(top = h * ROW_BOTTOM_FRACTION + 10.dp)
+                .graphicsLayer { alpha = homeAlpha },
+        )
 
         Row(
             Modifier.align(Alignment.TopEnd).padding(top = 30.dp, end = Gutter),

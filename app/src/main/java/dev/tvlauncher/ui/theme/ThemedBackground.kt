@@ -63,7 +63,7 @@ private fun patternAlpha(p: Pattern) = when (p) {
 }
 
 /** Patterns drawn in their own colours (ARGB) instead of as an accent-tinted alpha mask. */
-private fun isColourPattern(p: Pattern) = p == Pattern.RIBBONS
+private fun isColourPattern(p: Pattern) = p == Pattern.RIBBONS || p == Pattern.PRISM
 
 /** Where the pattern starts to show (alpha at the left edge): it stays clear of the title. */
 private fun maskFloor(p: Pattern) = when (p) {
@@ -89,7 +89,9 @@ private fun renderMask(
     val image = ImageBitmap(w, h, if (colour) ImageBitmapConfig.Argb8888 else ImageBitmapConfig.Alpha8)
     val size = Size(w.toFloat(), h.toFloat())
     if (colour) {
-        CanvasDrawScope().draw(density, dir, Canvas(image), size) { drawLumiereN() }
+        CanvasDrawScope().draw(density, dir, Canvas(image), size) {
+            if (t.pattern == Pattern.PRISM) drawNuvioPrism() else drawLumiereN()
+        }
         return image
     }
     CanvasDrawScope().draw(density, dir, Canvas(image), size) {
@@ -116,8 +118,8 @@ private fun renderMask(
 
 /**
  * Pattern masks for the whole process, keyed by pattern and size. Home and the About screen share them,
- * so opening About or coming back home never re-renders a mask. One lock serialises every render, so
- * the shared digit layouts are never drawn on two threads at once, even by two backgrounds.
+ * so opening About or coming back home never re-renders a mask. One lock serialises every render:
+ * one full-screen software draw at a time keeps the CPU free for the UI on this TV.
  */
 private object MaskCache {
     val masks = mutableStateMapOf<String, ImageBitmap>()
@@ -170,7 +172,11 @@ fun ThemedBackground(
                     MaskCache.renderLock.withLock {
                         // Another background may have rendered it while this one waited.
                         maskOf(next.pattern) ?: withContext(Dispatchers.Default) {
-                            renderMask(next, w, h, density, dir, digits)
+                            // Stored here, not after the lock, so a render finished just as this
+                            // background leaves (home to About) is kept instead of thrown away.
+                            renderMask(next, w, h, density, dir, digits).also {
+                                MaskCache.masks[MaskCache.key(next.pattern, w, h)] = it
+                            }
                         }
                     }
                 } catch (e: CancellationException) {

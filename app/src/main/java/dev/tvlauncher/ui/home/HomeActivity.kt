@@ -74,7 +74,12 @@ class HomeActivity : ComponentActivity() {
                 val infoTheme = remember {
                     app.controller.tiles().firstOrNull { it.target == Target.Info }?.theme ?: ConfigParser.DEFAULT_THEME
                 }
-                AboutScreen(theme = infoTheme, version = BuildConfig.VERSION_NAME, onBack = { showInfo = false })
+                AboutScreen(
+                    theme = infoTheme,
+                    version = BuildConfig.VERSION_NAME,
+                    onBack = { showInfo = false },
+                    onOpenTvHome = { app.controller.openTvHome() },
+                )
             } else if (showAllApps) {
                 var failure by remember { mutableStateOf<String?>(null) }
                 LaunchedEffect(failure) {
@@ -130,6 +135,11 @@ class HomeActivity : ComponentActivity() {
 
     private companion object {
         const val KEY_HOME_SIGNAL = "home_signal"
+    }
+
+    override fun onResume() {
+        super.onResume()
+        (application as App).tvHomeRequested = false
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {

@@ -36,7 +36,7 @@ data class SettingsTileSpec(override val theme: String) : TileSpec {
 /** The "i" tile: opens the About screen (what the launcher is and how to use it). */
 data class InfoTileSpec(override val label: String?, override val theme: String) : TileSpec
 
-enum class Pattern { NONE, GRID, DOTS, RINGS, DIGITS, DOODLES, LINES, RIBBONS, VIEWFINDER, TILES, LIGHTGRID }
+enum class Pattern { NONE, GRID, DOTS, RINGS, DIGITS, DOODLES, LINES, RIBBONS, VIEWFINDER, TILES, LIGHTGRID, PRISM }
 
 data class ThemeSpec(
     val id: String,

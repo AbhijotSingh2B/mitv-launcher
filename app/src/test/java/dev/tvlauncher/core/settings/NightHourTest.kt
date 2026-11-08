@@ -2,6 +2,7 @@ package dev.tvlauncher.core.settings
 
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class NightHourTest {
@@ -26,5 +27,11 @@ class NightHourTest {
     @Test
     fun emptyWindowIsNeverNight() {
         for (h in 0..23) assertFalse(LauncherSettings.isNightHour(h, 22, 22))
+    }
+
+    @Test
+    fun toggledAddsAtTheEndOrRemoves() {
+        assertEquals(listOf("a", "b"), LauncherSettings.toggled(listOf("a"), "b"))
+        assertEquals(listOf("b"), LauncherSettings.toggled(listOf("a", "b"), "a"))
     }
 }

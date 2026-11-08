@@ -86,6 +86,7 @@ fun DrawScope.drawPattern(pattern: Pattern, color: Color, digits: DigitLayouts? 
         Pattern.TILES -> drawAppGrid(color)
         Pattern.LIGHTGRID -> if (digits != null) drawNumberGrid(color, digits)
         Pattern.LINES -> drawFlowLines(color)
+        Pattern.PRISM -> drawNuvioPrism() // full colour; the accent is not used
         Pattern.DIGITS -> {
             if (digits == null) return
             val fieldW = w * DIGITS_WIDTH_FRACTION

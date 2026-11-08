@@ -2,9 +2,13 @@ package dev.tvlauncher.ui.theme
 
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Matrix
+import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asComposePath
@@ -266,5 +270,83 @@ private inline fun DrawScope.clipPathCompat(path: Path, block: DrawScope.() -> U
     drawContext.canvas.save()
     drawContext.canvas.clipPath(path)
     block()
+    drawContext.canvas.restore()
+}
+
+/** The outer rounded triangle of Nuvio's mark (same tracing as Marks.nuvio), 24-unit box. */
+private const val NUVIO_TRIANGLE =
+    "M7.66 5.32L17.11 10.55Q19.73 12.00 17.11 13.45L7.67 18.66Q5.04 20.11 5.04 17.11L5.04 6.87Q5.04 3.87 7.66 5.32Z"
+
+/**
+ * Nuvio: the logo's nested triangles keep rippling outward, stroked in Nuvio's cyan, blue, violet and
+ * pink gradient, around a softly glowing core, with a few small play-triangle sparks. Full colour
+ * (ARGB), drawn once. It fades out towards the left so the title stays clean.
+ */
+internal fun DrawScope.drawNuvioPrism() {
+    val w = size.width
+    val h = size.height
+    val cyan = Color(0xFF46E4F2)
+    val blue = Color(0xFF4F6EE6)
+    val violet = Color(0xFFA94BF2)
+    val pink = Color(0xFFE25DD6)
+    val base = PathParser.createPathFromPathData(NUVIO_TRIANGLE).asComposePath()
+    // Optical centre of the triangle in its 24-unit box (a little left of the bounding-box centre).
+    val cx = 11.2f
+    val cy = 12f
+    val centre = Offset(w * 0.75f, h * 0.36f)
+    val unit = h / 100f // the 24-unit triangle is about 16 units tall
+    fun triangle(k: Float, at: Offset = centre) = Path().apply {
+        addPath(base)
+        transform(Matrix().apply { translate(at.x, at.y); scale(k * unit, k * unit); translate(-cx, -cy) })
+    }
+    val prism = Brush.linearGradient(
+        listOf(cyan, blue, violet, pink),
+        start = Offset(w * 0.50f, h * 0.05f),
+        end = Offset(w * 0.98f, h * 0.80f),
+    )
+
+    drawContext.canvas.saveLayer(Rect(0f, 0f, w, h), Paint())
+    // Glow behind the core.
+    drawCircle(
+        Brush.radialGradient(
+            listOf(pink.copy(alpha = 0.30f), violet.copy(alpha = 0.22f), Color.Transparent),
+            center = centre,
+            radius = h * 0.62f,
+        ),
+        radius = h * 0.62f,
+        center = centre,
+    )
+    // Ripples: each ring 1.3x the last, thinner and fainter as it travels out.
+    var k = 1.55f
+    for (i in 0 until 11) {
+        val alpha = (1f - i * 0.08f).coerceAtLeast(0.10f)
+        val stroke = (3f - i * 0.18f).coerceAtLeast(1f) * density
+        val ring = triangle(k)
+        // A wide, faint pass under each line makes it glow like light, not ink.
+        drawPath(ring, prism, alpha = alpha * 0.22f, style = Stroke(width = stroke * 5f))
+        drawPath(ring, prism, alpha = alpha, style = Stroke(width = stroke))
+        k *= 1.3f
+    }
+    // The core: a solid prism triangle with a soft inner light.
+    drawPath(triangle(0.95f), prism, alpha = 0.95f)
+    drawPath(triangle(0.45f), Color.White.copy(alpha = 0.28f))
+    // Sparks: small play triangles scattered on the right, seeded so they never move.
+    val rnd = Random(11)
+    repeat(22) {
+        val at = Offset(w * (0.50f + rnd.nextFloat() * 0.48f), h * (0.04f + rnd.nextFloat() * 0.92f))
+        val size = 0.10f + rnd.nextFloat() * 0.16f
+        drawPath(triangle(size, at), prism, alpha = 0.20f + rnd.nextFloat() * 0.35f)
+    }
+    // Keep the title side clear.
+    drawRect(
+        Brush.horizontalGradient(
+            0f to Color.Black.copy(alpha = 0.05f),
+            0.36f to Color.Black.copy(alpha = 0.10f),
+            0.62f to Color.Black,
+            startX = 0f,
+            endX = w,
+        ),
+        blendMode = BlendMode.DstIn,
+    )
     drawContext.canvas.restore()
 }

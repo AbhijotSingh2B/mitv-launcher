@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_button_service_label">Home button for Home launcher</string>
+    <string name="home_button_service_description">Makes the remote\'s Home button, and the TV starting up, open the Home launcher instead of Google TV Home. It only sees button presses and which app is in front. It never reads what is on screen.</string>
+</resources>

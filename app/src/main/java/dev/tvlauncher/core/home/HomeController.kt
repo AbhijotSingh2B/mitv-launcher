@@ -41,6 +41,8 @@ interface Actions {
     fun openApp(packageName: String): Boolean
     fun switchInput(inputId: String): Boolean
     fun openSettings(): Boolean
+    /** Opens the TV's own home screen (Google TV Home), for the times you need it. */
+    fun openTvHome(): Boolean = false
 }
 
 interface HomeController {
@@ -48,6 +50,9 @@ interface HomeController {
     fun allApps(): List<InstalledApp>
     fun open(tile: HomeTile): LaunchResult
     fun openApp(app: InstalledApp): LaunchResult
+    /** Installed apps the user chose as shortcut pills, in their order. */
+    fun shortcuts(): List<InstalledApp> = emptyList()
+    fun openTvHome(): LaunchResult = LaunchResult.Failed("Couldn't open the TV home screen")
 }
 
 class DefaultHomeController(
@@ -56,14 +61,33 @@ class DefaultHomeController(
     private val apps: AppCatalog,
     private val inputs: InputCatalog,
     private val actions: Actions,
+    /** Package names the user added to the home row; they appear just before the All apps tile. */
+    private val rowApps: () -> List<String> = { emptyList() },
+    /** Package names the user added as shortcut pills. */
+    private val shortcutApps: () -> List<String> = { emptyList() },
 ) : HomeController {
 
     override fun tiles(): List<HomeTile> {
         // A package-manager or TV-input failure hides those tiles instead of crashing the home screen.
         val installed = readSafely { apps.installedTvApps() }.associateBy { it.packageName }
         val hdmi = readSafely { inputs.hdmiInputs() }
-        return buildTiles(installed, hdmi).distinctBy { it.key }
+        val configured = buildTiles(installed, hdmi)
+        val added = readSafely { rowApps() }.mapNotNull { pkg ->
+            installed[pkg]?.let { app ->
+                HomeTile("app:$pkg", app.label, HINT_OPEN, themes.themeFor(ADDED_THEME), Target.App(pkg), true)
+            }
+        }
+        val at = configured.indexOfFirst { it.target == Target.AllApps }.let { if (it < 0) configured.size else it }
+        return (configured.take(at) + added + configured.drop(at)).distinctBy { it.key }
     }
+
+    override fun shortcuts(): List<InstalledApp> {
+        val installed = readSafely { apps.installedTvApps() }.associateBy { it.packageName }
+        return readSafely { shortcutApps() }.mapNotNull { installed[it] }
+    }
+
+    override fun openTvHome(): LaunchResult =
+        if (safely { actions.openTvHome() }) LaunchResult.Opened else LaunchResult.Failed("Couldn't open the TV home screen")
 
     private fun buildTiles(
         installed: Map<String, InstalledApp>,
@@ -130,5 +154,7 @@ class DefaultHomeController(
         const val HINT_INFO = "Press OK to learn more"
         const val HINT_SWITCH = "Press OK to switch"
         const val HINT_UNAVAILABLE = "Not available on this TV"
+        /** Theme for tiles the user added from settings (themes.json "added"; falls back to the default). */
+        const val ADDED_THEME = "added"
     }
 }
