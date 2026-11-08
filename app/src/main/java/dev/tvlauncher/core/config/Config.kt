@@ -33,7 +33,7 @@ data class SettingsTileSpec(override val theme: String) : TileSpec {
     override val label: String? = "Settings"
 }
 
-enum class Pattern { NONE, GRID, DOTS, RINGS, DIGITS }
+enum class Pattern { NONE, GRID, DOTS, RINGS, DIGITS, DOODLES, LINES, RIBBONS, VIEWFINDER, TILES }
 
 data class ThemeSpec(
     val id: String,

@@ -44,9 +44,19 @@ class AndroidAppCatalog(private val context: Context) : AppCatalog {
 
     private fun render(drawable: Drawable?): Bitmap? {
         drawable ?: return null
-        val bitmap = Bitmap.createBitmap(SIZE, SIZE, Bitmap.Config.ARGB_8888)
+        // Keep the drawable's own aspect ratio (longest side SIZE): a 16:9 banner must not be stretched.
+        val iw = drawable.intrinsicWidth
+        val ih = drawable.intrinsicHeight
+        var w = SIZE
+        var h = SIZE
+        if (iw > 0 && ih > 0) {
+            val scale = SIZE.toFloat() / maxOf(iw, ih)
+            w = (iw * scale).toInt().coerceAtLeast(1)
+            h = (ih * scale).toInt().coerceAtLeast(1)
+        }
+        val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
-        drawable.setBounds(0, 0, SIZE, SIZE)
+        drawable.setBounds(0, 0, w, h)
         drawable.draw(canvas)
         return bitmap
     }

@@ -1,9 +1,9 @@
 [
-  {"id":"red","top":"#C8102E","bottom":"#7A0019","accent":"#FFFFFF","pattern":"dots"},
-  {"id":"dark","top":"#2A2A2A","bottom":"#0A0A0A","accent":"#E50914","pattern":"none"},
-  {"id":"blue","top":"#1A98FF","bottom":"#0B3D91","accent":"#FFFFFF","pattern":"rings"},
-  {"id":"purple","top":"#6B3FA0","bottom":"#2B1055","accent":"#FFFFFF","pattern":"grid"},
-  {"id":"grey","top":"#4A4F57","bottom":"#1E2126","accent":"#FFFFFF","pattern":"dots"},
-  {"id":"grid","top":"#2C3E50","bottom":"#10171E","accent":"#FFFFFF","pattern":"grid"},
+  {"id":"red","top":"#D3173F","bottom":"#7E0A26","accent":"#FFFFFF","pattern":"doodles"},
+  {"id":"dark","top":"#1D1B22","bottom":"#060508","accent":"#E50914","pattern":"ribbons"},
+  {"id":"blue","top":"#2F52D8","bottom":"#13227A","accent":"#FFFFFF","pattern":"lines"},
+  {"id":"purple","top":"#4B3584","bottom":"#140B2B","accent":"#FFFFFF","pattern":"viewfinder"},
+  {"id":"grey","top":"#454A53","bottom":"#16191E","accent":"#FFFFFF","pattern":"tiles"},
+  {"id":"grid","top":"#3D3936","bottom":"#141211","accent":"#FFFFFF","pattern":"rings"},
   {"id":"default","top":"#1E1B2E","bottom":"#0B0A12","accent":"#FFFFFF","pattern":"digits"}
 ]

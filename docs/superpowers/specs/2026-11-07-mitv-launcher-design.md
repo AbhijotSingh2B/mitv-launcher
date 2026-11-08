@@ -86,6 +86,24 @@ to keep memory low. There is no blur, because real-time blur needs Android 12 or
 - Home press to home screen drawn: under 1 s on a warm start.
 - Icons are loaded once at 256 px, from each app's highest-density drawable, and cached in memory.
 
+## v1 additions (user-directed, 2026-11-07)
+
+The user directed these during the home-screen redesign. They are part of v1.
+
+- **Look.** Poppins font (OFL). Vector brand marks for known apps (Simple Icons, CC0) and Material Symbols
+  for the built-in tiles (see `licenses/NOTICE.md`). Glass tiles that turn white and lift (scale 1.1) on focus.
+  Each tile has its own background motif. Pattern values added: `ribbons`, `viewfinder`, `tiles`.
+  `doodles` now draws media glyphs and `rings` draws a reticle.
+- **Night mode.** Darker, dimmer theme colours, a softer glow and quieter patterns. Auto runs from 22:00 to 06:00
+  (the times can be changed), or it can be set to Always on or Off. A moon "Night" badge shows next to the
+  clock while it is on.
+- **Launcher Settings screen.** A short press of Menu on home opens it (a long press still opens Setup), and
+  Setup has a button for it too. Settings: night mode, when night starts and ends, the night badge, "Open
+  Cameras when the TV turns on" (off by default; it only acts on screen-on or within 5 minutes of boot),
+  reduce motion, and a link to Home setup. Settings are stored in SharedPreferences.
+- **Release build.** R8 minify and resource shrinking (needed for smooth focus moves on the 1 GB TV), signed
+  with the local debug key for sideloading.
+
 ## Out of scope for v1
 
 Phone remote, web server, voice and Claude assistant, watch history, on-TV tile editor, wallpapers

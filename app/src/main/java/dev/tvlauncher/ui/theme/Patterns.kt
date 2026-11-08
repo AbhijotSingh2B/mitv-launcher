@@ -3,6 +3,7 @@ package dev.tvlauncher.ui.theme
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.drawText
 import dev.tvlauncher.core.config.Pattern
@@ -78,14 +79,12 @@ fun DrawScope.drawPattern(pattern: Pattern, color: Color, digits: DigitLayouts? 
                 y += step
             }
         }
-        Pattern.RINGS -> {
-            val c = Offset(w * 0.75f, h * 0.35f)
-            val base = h * 0.12f
-            val stroke = 2f * density
-            for (i in 1..RING_COUNT) {
-                drawCircle(color, base * i, c, style = androidx.compose.ui.graphics.drawscope.Stroke(stroke))
-            }
-        }
+        Pattern.RINGS -> drawReticle(color)
+        Pattern.DOODLES -> drawMediaGlyphs(color)
+        Pattern.RIBBONS -> drawRibbons(color)
+        Pattern.VIEWFINDER -> drawViewfinder(color)
+        Pattern.TILES -> drawAppGrid(color)
+        Pattern.LINES -> drawFlowLines(color)
         Pattern.DIGITS -> {
             if (digits == null) return
             val fieldW = w * DIGITS_WIDTH_FRACTION
@@ -93,11 +92,21 @@ fun DrawScope.drawPattern(pattern: Pattern, color: Color, digits: DigitLayouts? 
             val cells = digits.cells
             for (i in cells.indices) {
                 val cell = cells[i]
-                drawText(
-                    digits.layouts[cell.digit],
-                    color = color,
-                    topLeft = Offset(left + cell.xFrac * fieldW, cell.yFrac * h),
+                // Brightest and largest near the upper middle of the field, fading and shrinking towards
+                // the edges, as in the reference. Only ever rendered once into a cached mask.
+                val dx = cell.xFrac - 0.42f
+                val dy = (cell.yFrac - 0.22f) * 1.3f
+                val d = kotlin.math.sqrt(dx * dx + dy * dy)
+                val fall = (1f - d / 0.75f).coerceIn(0.1f, 1f)
+                val layout = digits.layouts[cell.digit]
+                val topLeft = Offset(left + cell.xFrac * fieldW, cell.yFrac * h)
+                val pivot = Offset(
+                    topLeft.x + layout.size.width / 2f,
+                    topLeft.y + layout.size.height / 2f,
                 )
+                scale(0.75f + 0.75f * fall * fall, pivot) {
+                    drawText(layout, color = color.copy(alpha = color.alpha * fall * fall), topLeft = topLeft)
+                }
             }
         }
     }

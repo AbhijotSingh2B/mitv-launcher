@@ -18,7 +18,12 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // R8 + resource shrinking: Compose runs several times faster than in debug on the 1 GB TV.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+            // Personal sideload build: signed with the local debug key so it installs over debug builds.
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 
