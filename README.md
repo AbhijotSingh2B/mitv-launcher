@@ -15,7 +15,9 @@ One row of tiles. The whole screen takes on the colours of whatever you select.
 
 <br>
 
-<img src="docs/images/tour.gif" alt="Moving along the tile row: About, Nuvio, Cameras, YouTube, Netflix, Prime Video, All apps and Settings, each with its own background" width="880">
+<img src="docs/images/tour.gif" alt="Moving along the tile row: About, Nuvio, Cameras, YouTube, Netflix, Prime Video, JioHotstar, Play Store, All apps and Settings, each with its own background" width="880">
+
+<sub>📺 <b>JioHotstar</b> and <b>Play Store</b> in this tour were added on the TV itself, from <b>Launcher settings → Home row apps</b>, with just the remote. No computer, no code and no config files were needed.</sub>
 
 </div>
 
@@ -163,7 +165,9 @@ The service only sees button presses and which app is in front. It never reads w
 
 ## Make it yours
 
-Everything on the home row comes from two small JSON files. No code changes are needed.
+**On the TV, no computer needed:** open **Launcher settings** (press <kbd>Menu</kbd>), then **Home row apps** to add any installed app as a tile, or **Shortcuts** to add it as a pill. Type part of its name on the on-screen keyboard and press <kbd>OK</kbd>. That's how JioHotstar and Play Store got onto the row in the tour above.
+
+**In the code:** the built-in tiles come from two small JSON files. No Kotlin changes are needed.
 
 **[`tiles.json`](app/src/main/assets/tiles.json)**: which tiles appear, and in what order.
 
