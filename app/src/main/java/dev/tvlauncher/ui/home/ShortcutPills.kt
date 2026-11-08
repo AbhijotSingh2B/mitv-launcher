@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -145,6 +146,8 @@ private fun Pill(
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     LaunchedEffect(focused) { onFocused(focused) }
+    // A focused pill can leave (its app was uninstalled, the list refreshed): clear its hint.
+    DisposableEffect(Unit) { onDispose { onFocused(false) } }
     val t by animateFloatAsState(if (focused) 1f else 0f, tween(150, easing = Emphasized), label = "pill")
     val fill = if (night) NightFill else Color.White
     val content = lerp(Color.White.copy(alpha = 0.88f), Ink, t)

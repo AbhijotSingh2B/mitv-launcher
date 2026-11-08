@@ -94,6 +94,10 @@ private fun hourLabel(h: Int): String = when {
 
 private fun countLabel(n: Int) = if (n == 0) "Add" else "$n added"
 
+/** Saved apps that are still installed (uninstalled ones are skipped on home and pruned by the picker). */
+private fun installedCount(context: android.content.Context, packages: List<String>): Int =
+    packages.count { runCatching { context.packageManager.getPackageInfo(it, 0) }.isSuccess }
+
 private val StartHours = listOf(19, 20, 21, 22, 23, 0)
 private val EndHours = listOf(4, 5, 6, 7, 8, 9)
 
@@ -122,10 +126,10 @@ fun LauncherSettingsScreen(onOpenSetup: () -> Unit, onOpenPicker: (PickerMode) -
 
     val rows = remember {
         listOf(
-            SettingItem("Home row apps", "Add any app as a tile on the home row", { countLabel(settings.homeRowApps.size) }, {
+            SettingItem("Home row apps", "Add any app as a tile on the home row", { countLabel(installedCount(context, settings.homeRowApps)) }, {
                 onOpenPicker(PickerMode.ROW)
             }, isAction = true),
-            SettingItem("Shortcuts", "Small pills under the home row for any app", { countLabel(settings.shortcutApps.size) }, {
+            SettingItem("Shortcuts", "Small pills under the home row for any app", { countLabel(installedCount(context, settings.shortcutApps)) }, {
                 onOpenPicker(PickerMode.SHORTCUTS)
             }, isAction = true),
             SettingItem("Night mode", "Darker, dimmer colours for a dark room", { settings.nightMode.label }, { d ->

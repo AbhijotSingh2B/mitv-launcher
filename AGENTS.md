@@ -15,7 +15,7 @@ This is an Android TV home screen (launcher) written in Kotlin with Jetpack Comp
    - Patterns are drawn **once**, off the main thread, into a cached mask (`ui/theme/ThemedBackground.kt`). Never draw a pattern live in a draw lambda.
    - Animate only while something is visible, as the About light wave does.
 4. **Everything works with a remote.** Every interactive thing must be focusable and reachable with the D-pad. Never rely on touch, hover or a text keyboard. The picker has its own on-screen keyboard because the TV's keyboard can be phone-only.
-5. **Back never leaves home. Home always returns home.** Don't break `HomeActivity`'s `onNewIntent` and saved-signal logic. See the comments there.
+5. **Back never leaves home. Home returns home** (via the Home button service on TVs where Google TV Home wins the Home button). Don't break `HomeActivity`'s `onNewIntent` and saved-signal logic. See the comments there.
 6. **Keep the core plain Kotlin.** `core/` has no Compose imports, so it stays unit-testable on the JVM.
 7. **Credit third-party assets.** Every new logo, icon path or font gets a row in [`licenses/NOTICE.md`](licenses/NOTICE.md). Brand logos are trademarks: use them only to label that brand's own app.
 

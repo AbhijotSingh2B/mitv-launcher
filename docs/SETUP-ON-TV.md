@@ -20,12 +20,12 @@ On this Mi TV, Google TV Home is a system app whose Home filter has priority 2, 
 2. On the TV: **Settings → Device Preferences → PatchWall → Set PatchWall as default launcher → off**, so PatchWall doesn't open at start-up.
 3. In **Launcher settings**, keep **Open at start-up** on (the default). A boot receiver opens the launcher when the TV starts. The service also replaces PatchWall if it opens itself in the first three minutes after boot, and replaces Google TV Home if it appears on its own.
 
-The **TV home** pill (under the tile row, and on the About screen) opens Google TV Home on purpose. The service leaves it alone until you go elsewhere. Pressing Home there comes back here.
+The **TV home** pill (under the tile row, and on the About screen) opens Google TV Home on purpose. The service leaves it alone until you're back on this launcher. Pressing Home there comes back here.
 
 Notes:
 - The service only sees key events and the class name of the window in front. It can't read screen content (`canRetrieveWindowContent="false"`).
 - `adb shell input keyevent KEYCODE_HOME` skips accessibility key filtering, so test the Home button with the real remote.
-- A held Home press is consumed too, so the system's long-press Home action doesn't run while the service is on.
+- A held Home press (over half a second) does nothing while the service is on, so the system's long-press Home action doesn't run.
 
 **TVs with a Home chooser:** open **Home Setup**, turn on **Use as home screen**, press Home, choose **Home**, and select **Always**.
 

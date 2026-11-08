@@ -78,14 +78,14 @@ to keep memory low. There is no blur, because real-time blur needs Android 12 or
   "Home button for Home launcher":
   - It reads only key events and the package and class of the window in front
     (`canRetrieveWindowContent="false"`). It logs and stores nothing.
-  - It consumes `KEYCODE_HOME` only, and opens this launcher on release. A held Home is consumed too,
-    so the system's long-press Home action doesn't run while the service is on.
+  - It consumes `KEYCODE_HOME` only, and opens this launcher on a short press. A held Home (over
+    500 ms) does nothing, so the system's long-press Home action doesn't run while the service is on.
   - When Google TV Home's `MainActivity` appears on its own (boot or wake), it replaces it with this
     launcher.
   - When PatchWall (`com.mitv.tvhome.atv`) opens itself within **3 minutes of boot**, it replaces it.
     After that window, PatchWall opens normally (from All apps).
   - **Escape hatch:** the "TV home" pill (under the tile row, and on the About screen) opens Google TV
-    Home on purpose, and the service leaves it alone until the user goes elsewhere.
+    Home on purpose, and the service leaves it alone until this launcher is back in front.
   - **To turn it off:** Settings > Device Preferences > Accessibility > the service > Enable off, or
     "Home button opens this launcher" in Launcher settings.
 - **Boot receiver.** `system/BootReceiver` opens the launcher after `BOOT_COMPLETED` only when

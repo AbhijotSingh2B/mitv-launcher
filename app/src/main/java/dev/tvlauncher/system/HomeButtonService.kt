@@ -28,17 +28,24 @@ class HomeButtonService : AccessibilityService() {
 
     override fun onServiceConnected() {
         super.onServiceConnected()
-        // Connected after a boot: the TV is probably showing Google TV Home right now.
-        if (app.settings.homeButtonOpensLauncher && app.settings.openOnStartup) openLauncher()
+        // Connected during start-up: the TV is probably showing Google TV Home or PatchWall right now.
+        // Not on a later connect (the user just switched the service on, or the system rebound it).
+        if (app.settings.homeButtonOpensLauncher && app.settings.openOnStartup && inStartupWindow() && !app.tvHomeRequested) {
+            openLauncher()
+        }
     }
 
     override fun onKeyEvent(event: KeyEvent): Boolean {
         if (event.keyCode != KeyEvent.KEYCODE_HOME || !app.settings.homeButtonOpensLauncher) return false
-        // Consume the press and act on release. The first DOWN is consumed before we can tell a short
-        // press from a long one, so a held Home is swallowed too: the system's long-press Home action
-        // doesn't run while this service is on.
-        if (event.action == KeyEvent.ACTION_UP && !event.isCanceled && event.repeatCount == 0) openLauncher()
-        return event.repeatCount == 0
+        // The first DOWN is consumed before a short press can be told from a long one, so the system's
+        // long-press Home action doesn't run while this service is on. A short press opens this
+        // launcher on release; a held Home (released after LONG_PRESS_MS) does nothing.
+        if (event.action == KeyEvent.ACTION_UP && !event.isCanceled &&
+            event.eventTime - event.downTime < LONG_PRESS_MS
+        ) {
+            openLauncher()
+        }
+        return true
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
@@ -52,14 +59,17 @@ class HomeButtonService : AccessibilityService() {
             // PatchWall opens itself as the TV starts. Only in the first minutes after boot, so
             // opening PatchWall from All apps later still works.
             pkg == PATCHWALL_PACKAGE -> {
-                if (app.settings.openOnStartup && SystemClock.elapsedRealtime() < STARTUP_WINDOW_MS) openLauncher()
+                if (app.settings.openOnStartup && inStartupWindow() && !app.tvHomeRequested) openLauncher()
             }
-            // Leaving Google TV Home for a real app ends the "opened on purpose" pass.
-            pkg != GOOGLE_HOME_PACKAGE && pkg != SYSTEM_UI && pkg != packageName -> app.tvHomeRequested = false
         }
+        // The "opened on purpose" pass (TV home pill) ends only when this launcher is back in front
+        // (HomeActivity.onResume). Voice search, permission dialogs and overlays fire window events
+        // from other packages and must not end it.
     }
 
     override fun onInterrupt() = Unit
+
+    private fun inStartupWindow() = SystemClock.elapsedRealtime() < STARTUP_WINDOW_MS
 
     private fun openLauncher() {
         runCatching {
@@ -74,7 +84,7 @@ class HomeButtonService : AccessibilityService() {
     companion object {
         private const val GOOGLE_HOME_PACKAGE = "com.google.android.tvlauncher"
         private const val GOOGLE_HOME_ACTIVITY = "com.google.android.tvlauncher.MainActivity"
-        private const val SYSTEM_UI = "com.android.systemui"
+        private const val LONG_PRESS_MS = 500L
         private const val PATCHWALL_PACKAGE = "com.mitv.tvhome.atv"
         private const val STARTUP_WINDOW_MS = 3 * 60_000L
 

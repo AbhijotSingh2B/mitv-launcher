@@ -60,8 +60,7 @@
             android:name=".ui.settings.AppPickerActivity"
             android:exported="false"
             android:excludeFromRecents="true"
-            android:screenOrientation="landscape"
-            />
+            android:screenOrientation="landscape" />
 
         <!-- Home button and start-up: see system/HomeButtonService for why this is needed. -->
         <service

@@ -319,6 +319,7 @@ internal fun DrawScope.drawNuvioPrism() {
     // Ripples: each ring 1.3x the last, thinner and fainter as it travels out.
     var k = 1.55f
     for (i in 0 until 11) {
+        if (k * unit * 16f > 2.4f * maxOf(w, h)) break // the rest would be entirely off screen
         val alpha = (1f - i * 0.08f).coerceAtLeast(0.10f)
         val stroke = (3f - i * 0.18f).coerceAtLeast(1f) * density
         val ring = triangle(k)

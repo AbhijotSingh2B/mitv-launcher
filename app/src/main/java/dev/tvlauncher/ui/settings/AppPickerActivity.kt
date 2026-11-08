@@ -108,6 +108,15 @@ private fun AppPickerScreen(mode: PickerMode, load: () -> List<InstalledApp>) {
         if (mode == PickerMode.ROW) settings.homeRowApps = next else settings.shortcutApps = next
         version++
     }
+    // Drop saved apps that have since been uninstalled, so counts are right and nothing is stuck.
+    LaunchedEffect(apps) {
+        val installed = apps?.map { it.packageName }?.toSet() ?: return@LaunchedEffect
+        if (chosen().any { it !in installed }) {
+            val kept = chosen().filter { it in installed }
+            if (mode == PickerMode.ROW) settings.homeRowApps = kept else settings.shortcutApps = kept
+            version++
+        }
+    }
     val shown = apps.orEmpty().filter { query.isBlank() || it.label.contains(query.trim(), ignoreCase = true) }
 
     val firstKey = remember { FocusRequester() }
