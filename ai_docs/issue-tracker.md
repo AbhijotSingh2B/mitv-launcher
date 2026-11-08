@@ -21,7 +21,12 @@ Known issues and deferred review findings. Update the status when one is fixed.
 | 14 | Settings | "Open Cameras when the TV turns on" hasn't been tried on the TV (it would switch to the CCTV input). Its decision logic is unit tested. | 🟡 |
 | 15 | Home | The "Switching to" overlay is barely seen when opening apps, because the app covers home straight away. It shows mainly for HDMI switches. | 🟡 |
 | 16 | Patterns | `drawDoodles` and `polyPath` in `Doodles.kt` are now unused (DOODLES draws media glyphs). | 🔴 minor |
-| 17 | Settings | The last polish pass (grid behind the list, off-white focused row at night, stable tile callbacks) is built but not yet installed on the TV. | 🟡 |
+| 18 | All apps | Scrolling the grid isn't smooth yet: the 95th-percentile frame is 46 ms on the release build. | 🔴 |
+| 19 | All apps | When the grid scrolls, cards clip sharply under the header. A soft top fade would look better. | 🔴 minor |
+| 20 | All apps | Apps with only a square icon (PatchWall, Play Games) show a small icon on a glass card, a bit box-in-box. | 🔴 minor |
+| 21 | All apps | The failure pill shrinks while fading out, and two identical failures within 3 s don't restart its timer (home does the same). | 🔴 minor |
+| 22 | Setup | The "Clear defaults" settings path in the how-to note hasn't been checked on this TV. | 🟡 |
+| 23 | Setup | The full switch flow (turn on, press Home, Always, restart) still needs doing on the TV by you. | 🟡 |
 
 ## Fixed
 
@@ -31,7 +36,10 @@ Known issues and deferred review findings. Update the status when one is fixed.
 | F2 | Config | An empty or all-invalid tile list showed an empty home screen. | Task 2, `4eb9926` |
 | F3 | HomeController | A throwing action could crash the launcher. | Task 4, `ec95ffc` |
 | F4 | HomeController | Duplicate tiles gave duplicate keys, which would crash the tile row. | Task 4, `ec95ffc` |
-| F5 | Icons | Banners were stretched into squares. Now aspect-kept, and known apps use vector brand marks. | Task 6 redesign (uncommitted) |
-| F6 | Background | Every focus move re-rasterised and uploaded a full-screen bitmap. Now GPU gradients plus cached alpha masks rendered off the main thread, with an alpha-only cross-fade. The 95th-percentile frame dropped from 250 ms to 73 ms. | Task 6 redesign (uncommitted) |
-| F7 | Build | Task 6 was interrupted. Taken over and finished in the executor session. | Task 6 redesign (uncommitted) |
-| F8 | Icons | Compose's path parser mangled the Netflix and Prime logos. Switched to the framework `PathParser`. | Task 6 redesign (uncommitted) |
+| F5 | Icons | Banners were stretched into squares. Now aspect-kept, and known apps use vector brand marks. | Task 6 redesign `86739d4` |
+| F6 | Background | Every focus move re-rasterised and uploaded a full-screen bitmap. Now GPU gradients plus cached alpha masks rendered off the main thread, with an alpha-only cross-fade. The 95th-percentile frame dropped from 250 ms to 73 ms. | Task 6 redesign `86739d4` |
+| F7 | Build | Task 6 was interrupted. Taken over and finished in the executor session. | Task 6 redesign `86739d4` |
+| F8 | Icons | Compose's path parser mangled the Netflix and Prime logos. Switched to the framework `PathParser`. | Task 6 redesign |
+| F9 | Home | Back from All apps put focus on the first tile once Home had ever been pressed. | Fix round `438a1af` |
+| F10 | Setup | The how-to card could be cut off with no way to scroll on the 540 dp tall screen. | Fix round `438a1af` |
+| F11 | Settings | The last polish pass (grid behind the list, off-white focused row at night, stable tile callbacks) is now installed on the TV. | `86739d4`, installed 2026-11-08 |

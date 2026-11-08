@@ -26,7 +26,9 @@ assets/  tiles.json (which tiles, in what order) and themes.json (colours, patte
 - **ui/theme:** gradient background drawn live on the GPU, plus a per-tile motif pre-rendered off the main thread into an alpha mask (`digits`, `doodles` media glyphs, `lines`, `rings` reticle, `ribbons`, `viewfinder`, `tiles`, `grid`, `dots`), with a 400 ms cross-fade. Poppins font, night-mode colours.
 - **ui/home:** home screen: glass tiles with vector brand marks, title and hint, clock, night badge, "Switching to" overlay
 - **ui/settings:** Launcher Settings (short press of Menu on home)
-- **ui/apps, ui/setup:** All apps grid (Task 7), Setup screen with a "Use as home screen" switch (Task 8)
+- **ui/apps:** All apps: 5-column grid of 16:9 glass cards; every TV app, including PatchWall
+- **ui/setup:** Setup: the "Use as home screen" switch (`core/home/HomeSwitch` toggles the disabled-by-default HOME alias) and how-to steps; shares its look with Launcher Settings (`ui/settings/SettingsUi.kt`)
+- **Setting it up on the TV:** [docs/SETUP-ON-TV.md](../docs/SETUP-ON-TV.md). TV clean-up record: [docs/tv-cleanup.md](../docs/tv-cleanup.md)
 
 ## What the home screen looks like now
 
