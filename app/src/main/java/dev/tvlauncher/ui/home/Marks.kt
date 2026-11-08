@@ -6,6 +6,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.scale
@@ -19,10 +21,21 @@ import dev.tvlauncher.core.home.Target
  * Material Symbols Rounded (Apache 2.0, fonts.google.com/icons). Path data is copied verbatim.
  * [wide] marks are wordmarks that should fill the width of their box rather than its height.
  */
-class Mark(pathData: String, val brand: Color?, val wide: Boolean = false) {
+class Mark(
+    pathData: String,
+    val brand: Color?,
+    val wide: Boolean = false,
+    evenOdd: Boolean = false,
+    /** When set, the focused mark is filled with this top-left to bottom-right gradient instead of [brand]. */
+    val gradient: List<Color>? = null,
+) {
     // The framework parser (the one VectorDrawable uses) handles compact SVG path syntax reliably.
     val path: Path = PathParser.createPathFromPathData(pathData).asComposePath()
     val bounds: Rect = path.getBounds()
+
+    init {
+        if (evenOdd) path.fillType = PathFillType.EvenOdd
+    }
 }
 
 private object Marks {
@@ -75,7 +88,21 @@ private object Marks {
 
     val info by lazy { Mark(dev.tvlauncher.ui.info.INFO_ICON, null) }
 
+    // Nuvio's logo (a rounded play triangle with a triangular cut-out and a small play button), traced
+    // as a vector from the app's own icon (github.com/tapframe/NuvioMobile). Brand art for the user's TV.
+    val nuvio by lazy {
+        Mark(
+            "M7.66 5.32L17.11 10.55Q19.73 12.00 17.11 13.45L7.67 18.66Q5.04 20.11 5.04 17.11L5.04 6.87Q5.04 3.87 7.66 5.32Z" +
+                "M9.54 8.89L14.13 11.50Q15.00 12.00 14.13 12.49L9.54 15.07Q8.67 15.56 8.67 14.56L8.67 9.39Q8.67 8.39 9.54 8.89Z" +
+                "M10.63 10.76L12.41 11.74Q12.89 12.00 12.41 12.26L10.63 13.24Q10.15 13.50 10.15 12.95L10.15 11.05Q10.15 10.50 10.63 10.76Z",
+            Color(0xFF8B5CF6),
+            evenOdd = true,
+            gradient = listOf(Color(0xFF46E4F2), Color(0xFF4F6EE6), Color(0xFFA94BF2), Color(0xFFE25DD6)),
+        )
+    }
+
     val byPackage: Map<String, () -> Mark> = mapOf(
+        "com.nuvio.app" to { nuvio },
         "com.google.android.youtube.tv" to { youtube },
         "com.google.android.youtube.tvkids" to { youtube },
         "com.netflix.ninja" to { netflix },
@@ -94,7 +121,7 @@ fun markFor(tile: HomeTile): Mark? = when (val t = tile.target) {
 
 /** Draws [mark] in [color], fitted and centred in the composable's bounds. */
 @Composable
-fun MarkImage(mark: Mark, color: Color, modifier: Modifier = Modifier) {
+fun MarkImage(mark: Mark, color: Color, modifier: Modifier = Modifier, gradientAlpha: Float = 0f) {
     Canvas(modifier) {
         val b = mark.bounds
         if (b.width <= 0f || b.height <= 0f) return@Canvas
@@ -104,7 +131,18 @@ fun MarkImage(mark: Mark, color: Color, modifier: Modifier = Modifier) {
         translate(dx, dy) {
             scale(s, s, pivot = Offset.Zero) {
                 translate(-b.left, -b.top) {
-                    drawPath(mark.path, color)
+                    val g = mark.gradient
+                    if (g != null && gradientAlpha > 0f) {
+                        // Fade from the plain colour to the brand gradient (used as a tile gains focus).
+                        if (gradientAlpha < 1f) drawPath(mark.path, color, alpha = 1f - gradientAlpha)
+                        drawPath(
+                            mark.path,
+                            Brush.linearGradient(g, start = Offset(b.left, b.top), end = Offset(b.right, b.bottom)),
+                            alpha = gradientAlpha,
+                        )
+                    } else {
+                        drawPath(mark.path, color)
+                    }
                 }
             }
         }

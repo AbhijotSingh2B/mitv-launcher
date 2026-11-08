@@ -137,6 +137,7 @@ fun TileCard(
                     mark,
                     markColor,
                     Modifier.align(Alignment.Center).padding(bottom = size * 0.12f).size(w, h),
+                    gradientAlpha = t,
                 )
             }
             art != null -> {
