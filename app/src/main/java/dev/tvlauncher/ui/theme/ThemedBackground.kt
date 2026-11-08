@@ -49,30 +49,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
-private fun patternAlpha(p: Pattern) = when (p) {
-    Pattern.DIGITS -> 0.30f
-    Pattern.DOODLES -> 0.12f
-    Pattern.LINES -> 0.14f
-    Pattern.RINGS -> 0.20f
-    Pattern.GRID -> 0.07f
-    Pattern.RIBBONS -> 0.55f
-    Pattern.VIEWFINDER -> 0.30f
-    Pattern.TILES -> 0.10f
-    Pattern.LIGHTGRID -> 1f // full strength: dimmed and lit at draw time
-    else -> 0.09f
-}
-
-/** Patterns drawn in their own colours (ARGB) instead of as an accent-tinted alpha mask. */
-private fun isColourPattern(p: Pattern) = p == Pattern.RIBBONS || p == Pattern.PRISM
-
-/** Where the pattern starts to show (alpha at the left edge): it stays clear of the title. */
-private fun maskFloor(p: Pattern) = when (p) {
-    Pattern.DIGITS, Pattern.RIBBONS, Pattern.LIGHTGRID -> 1f // composed already / full screen by design
-    Pattern.DOODLES -> 0.22f
-    Pattern.VIEWFINDER -> 0.0f
-    else -> 0.15f
-}
-
 /**
  * Renders a theme's pattern into a one-byte-per-pixel alpha mask (about 0.9 MB at 1280 x 720).
  * Pure software drawing, so it runs off the main thread; the mask is tinted with the accent at draw time.
@@ -85,19 +61,17 @@ private fun renderMask(
     dir: LayoutDirection,
     digits: DigitLayouts,
 ): ImageBitmap {
-    val colour = isColourPattern(t.pattern)
-    val image = ImageBitmap(w, h, if (colour) ImageBitmapConfig.Argb8888 else ImageBitmapConfig.Alpha8)
+    val style = styleOf(t.pattern)
+    val image = ImageBitmap(w, h, if (style.fullColour) ImageBitmapConfig.Argb8888 else ImageBitmapConfig.Alpha8)
     val size = Size(w.toFloat(), h.toFloat())
-    if (colour) {
-        CanvasDrawScope().draw(density, dir, Canvas(image), size) {
-            if (t.pattern == Pattern.PRISM) drawNuvioPrism() else drawLumiereN()
-        }
+    if (style.fullColour) {
+        CanvasDrawScope().draw(density, dir, Canvas(image), size) { drawPattern(t.pattern, Color.Unspecified, digits) }
         return image
     }
     CanvasDrawScope().draw(density, dir, Canvas(image), size) {
-        val floor = maskFloor(t.pattern)
+        val floor = style.leftFade
         drawContext.canvas.saveLayer(Rect(0f, 0f, size.width, size.height), Paint())
-        drawPattern(t.pattern, Color.Black.copy(alpha = patternAlpha(t.pattern)), digits)
+        drawPattern(t.pattern, Color.Black.copy(alpha = style.alpha), digits)
         if (floor < 1f) {
             // Fade towards the left so the title area stays clean.
             drawRect(
@@ -248,7 +222,7 @@ fun ThemedBackground(
                     drawRect(g, alpha = alpha)
                     val m = maskOf(t.pattern) ?: return
                     when {
-                        isColourPattern(t.pattern) -> drawImage(m, alpha = alpha * patternScale)
+                        styleOf(t.pattern).fullColour -> drawImage(m, alpha = alpha * patternScale)
                         t.pattern == Pattern.LIGHTGRID -> {
                             val tint = tints.getOrPut(t.id) { ColorFilter.tint(Color(t.accent), BlendMode.SrcIn) }
                             // The dark grid, barely there...

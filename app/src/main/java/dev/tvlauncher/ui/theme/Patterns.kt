@@ -45,7 +45,39 @@ fun digitGrid(
 class DigitLayouts(val cells: List<DigitCell>, val layouts: List<TextLayoutResult>)
 
 /**
- * Draws a faint pattern. Allocation free per frame. DIGITS needs [digits]; without it nothing is drawn.
+ * How a pattern is rendered into its cached bitmap. [styleOf] is exhaustive on purpose: a new [Pattern]
+ * value doesn't compile until it has a style there and a branch in [drawPattern]. Those two `when`s,
+ * the enum and the drawing function are the whole job of adding a background.
+ *
+ * @param alpha strength of an accent-tinted mask pattern (ignored for [fullColour]).
+ * @param leftFade alpha at the left edge, so the title side stays clean; 1 means no fade.
+ * @param fullColour drawn in its own colours into an ARGB bitmap instead of an accent-tinted alpha mask.
+ */
+internal class PatternStyle(val alpha: Float, val leftFade: Float = 0.15f, val fullColour: Boolean = false)
+
+/** The style for [p]; built once per pattern, so it is safe to call while drawing a frame. */
+internal fun styleOf(p: Pattern): PatternStyle = Styles[p.ordinal]
+
+private val Styles: List<PatternStyle> by lazy { Pattern.entries.map(::buildStyle) }
+
+private fun buildStyle(p: Pattern): PatternStyle = when (p) {
+    Pattern.NONE -> PatternStyle(0f)
+    Pattern.GRID -> PatternStyle(0.07f)
+    Pattern.DOTS -> PatternStyle(0.09f)
+    Pattern.RINGS -> PatternStyle(0.20f)
+    Pattern.DIGITS -> PatternStyle(0.30f, leftFade = 1f) // composed to the right already
+    Pattern.DOODLES -> PatternStyle(0.12f, leftFade = 0.22f)
+    Pattern.LINES -> PatternStyle(0.14f)
+    Pattern.RIBBONS -> PatternStyle(1f, leftFade = 1f, fullColour = true) // Netflix light-band N
+    Pattern.VIEWFINDER -> PatternStyle(0.30f, leftFade = 0f)
+    Pattern.TILES -> PatternStyle(0.10f)
+    Pattern.LIGHTGRID -> PatternStyle(1f, leftFade = 1f) // dimmed and lit at draw time
+    Pattern.PRISM -> PatternStyle(1f, leftFade = 1f, fullColour = true) // Nuvio; fades itself
+}
+
+/**
+ * Draws a pattern, once, into its cached bitmap (never per frame). Mask patterns use [color];
+ * full-colour ones ignore it. DIGITS and LIGHTGRID need [digits]; without it nothing is drawn.
  */
 fun DrawScope.drawPattern(pattern: Pattern, color: Color, digits: DigitLayouts? = null) {
     val w = size.width
@@ -81,7 +113,7 @@ fun DrawScope.drawPattern(pattern: Pattern, color: Color, digits: DigitLayouts? 
         }
         Pattern.RINGS -> drawReticle(color)
         Pattern.DOODLES -> drawMediaGlyphs(color)
-        Pattern.RIBBONS -> drawRibbons(color)
+        Pattern.RIBBONS -> drawLumiereN() // full colour; the accent is not used
         Pattern.VIEWFINDER -> drawViewfinder(color)
         Pattern.TILES -> drawAppGrid(color)
         Pattern.LIGHTGRID -> if (digits != null) drawNumberGrid(color, digits)

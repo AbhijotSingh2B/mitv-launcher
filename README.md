@@ -23,6 +23,9 @@ One row of tiles. The whole screen takes on the colours of whatever you select.
 
 <br>
 
+> [!NOTE]
+> **This is a deliberately barebones launcher, shared as a reference and a starting point.** It's stable: it runs every day as the home screen of a Mi TV, and its core logic is covered by unit tests. But it does one thing simply, on purpose. It's meant to be forked and built on, not installed as a finished product. Adding a tile, a theme, a background, a logo or a setting is a small, local change: see [Make it yours](#make-it-yours) and [AGENTS.md](AGENTS.md).
+
 ## Why
 
 Stock TV launchers are loud: rows of ads, autoplaying trailers and "recommended for you" shelves. This launcher replaces all of that with a single row of large tiles over a living, full-screen background, inspired by the Frame TV look. It's built for a Xiaomi Mi TV (Android TV 9) and runs smoothly on its 1 GB of RAM.

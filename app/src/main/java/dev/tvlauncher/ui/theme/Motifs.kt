@@ -65,37 +65,6 @@ internal fun DrawScope.drawMediaGlyphs(color: Color) {
     }
 }
 
-/** Netflix: a fan of soft light ribbons sweeping up from the bottom right, with a brighter edge on each. */
-internal fun DrawScope.drawRibbons(color: Color) {
-    val w = size.width
-    val h = size.height
-    val origin = Offset(w * 1.02f, h * 1.15f)
-    for (i in 0 until 9) {
-        val f = i / 8f
-        val end = Offset(w * (0.30f + 0.62f * f), -h * 0.1f)
-        val ctrl1 = Offset(w * (0.98f - 0.10f * f), h * (0.75f - 0.2f * f))
-        val ctrl2 = Offset(w * (0.40f + 0.55f * f), h * (0.35f - 0.1f * f))
-        val p = Path().apply {
-            moveTo(origin.x, origin.y)
-            cubicTo(ctrl1.x, ctrl1.y, ctrl2.x, ctrl2.y, end.x, end.y)
-        }
-        val bandA = 0.35f + 0.65f * (1f - kotlin.math.abs(f - 0.55f) * 1.6f).coerceIn(0f, 1f)
-        // Wide soft band, then a thin bright edge.
-        drawPath(p, color.copy(alpha = color.alpha * 0.45f * bandA), style = Stroke((46f - 3f * i) * density, cap = StrokeCap.Round))
-        drawPath(p, color.copy(alpha = color.alpha * 0.9f * bandA), style = Stroke(2.2f * density, cap = StrokeCap.Round))
-    }
-    // A glow pooled where the ribbons converge.
-    drawCircle(
-        Brush.radialGradient(
-            listOf(color.copy(alpha = color.alpha * 0.9f), Color.Transparent),
-            center = Offset(w * 0.97f, h * 1.0f),
-            radius = h * 0.55f,
-        ),
-        radius = h * 0.55f,
-        center = Offset(w * 0.97f, h * 1.0f),
-    )
-}
-
 /** Cameras: a camera viewfinder (corner brackets, rule-of-thirds lines, centre mark, REC dot) over faint scanlines. */
 internal fun DrawScope.drawViewfinder(color: Color) {
     val w = size.width

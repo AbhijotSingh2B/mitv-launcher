@@ -58,16 +58,30 @@ Users can also add apps without code: **Launcher settings → Home row apps**, o
 Add a theme to `themes.json` with `id`, `top` and `bottom` gradient colours (hex), `accent`, and `pattern`. Then point the tile's `theme` at it.
 
 ### Draw a new background pattern
-1. Add a value to `enum class Pattern` in `core/config/Config.kt`.
-2. Write `internal fun DrawScope.drawYourThing(color: Color)` in `ui/theme/Motifs.kt`. Use relative sizes (`size.width`, `size.height`) and seeded `Random` so it never shifts.
-3. Add it to the `when` in `ui/theme/Patterns.kt`.
-4. If it is full colour rather than an accent-tinted mask, add it to `isColourPattern` in `ThemedBackground.kt`, as `RIBBONS` (Netflix) and `PRISM` (Nuvio) are. Draw it in `renderMask`.
-5. Use it from `themes.json`, add its lowercase name to the README pattern list, and check it on a TV.
+1. Add a value to `enum class Pattern` in `core/config/Config.kt`. The build then fails in exactly two places, and those are the rest of the job.
+2. Write `internal fun DrawScope.drawYourThing(color: Color)` in `ui/theme/Motifs.kt`. Use relative sizes (`size.width`, `size.height`) and a seeded `Random` so it never shifts.
+3. In `ui/theme/Patterns.kt`:
+   - Add a branch to `drawPattern` that calls your function.
+   - Add a `PatternStyle` to `buildStyle`: its strength, how much it fades towards the title, and `fullColour = true` if it draws its own colours. `RIBBONS` (Netflix) and `PRISM` (Nuvio) use `fullColour`; the rest are accent-tinted masks.
+4. Use it from `themes.json`, add its lowercase name to the README pattern list, and check it on a TV. `AssetsTest` fails if `themes.json` names a pattern that doesn't exist.
 
 ### Add a brand logo to a tile
 Add a `Mark` (an SVG path in a 24-unit box) in `ui/home/Marks.kt`, map the package in `byPackage`, and credit the source in `licenses/NOTICE.md`.
 - Parse paths with `androidx.core.graphics.PathParser`, not Compose's parser. Compose's mangles some logos.
 - Set `gradient` for a brand gradient on focus, as Nuvio does.
+
+### Add a new kind of tile (beyond app, hdmi, allApps, settings, info)
+`TileSpec`, `Target` and `LaunchResult` are sealed, and every `when` over them is exhaustive. Add the new types and the compiler lists each place that needs a branch. The About tile (`info`) is the worked example to copy:
+1. In `core/config/Config.kt`, add a `TileSpec` data class and a `"yourtype"` case in the tile parser. Add a parser test in `ConfigTest`.
+2. In `core/home/HomeController.kt`:
+   - Add a `Target`.
+   - Map the spec in `buildTiles`.
+   - Decide in `open()`: either launch through `Actions`, or return a new `LaunchResult` (for example `ShowYourScreen`) for the UI to handle.
+   - Add a test in `HomeControllerTest`.
+3. In the UI:
+   - Give it an icon in `markFor` (`ui/home/Marks.kt`).
+   - Handle any new `LaunchResult` in `HomeScreen`'s `onOpen`.
+   - If it opens a screen of its own, show it from `HomeActivity`, as `AboutScreen` is shown, with a `BackHandler`.
 
 ### Add a launcher setting
 1. Add a property with a safe default in `LauncherSettings.kt`.
