@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.core.graphics.PathParser
+import androidx.compose.ui.text.drawText
 import kotlin.random.Random
 
 /*
@@ -149,4 +150,121 @@ internal fun DrawScope.drawAppGrid(color: Color) {
         y += s + gap
         row++
     }
+}
+
+/** About tile: an even grid of small digits, varied in brightness. Lit by the moving light wave at draw time. */
+internal fun DrawScope.drawNumberGrid(color: Color, digits: DigitLayouts) {
+    val rnd = Random(29)
+    val colW = 30f * density
+    val rowH = 34f * density
+    val glyphScale = 0.62f
+    var y = rowH * 0.25f
+    while (y < size.height) {
+        var x = colW * 0.3f
+        while (x < size.width) {
+            val layout = digits.layouts[rnd.nextInt(10)]
+            val a = 0.45f + rnd.nextFloat() * 0.55f
+            scale(glyphScale, glyphScale, pivot = Offset(x, y)) {
+                drawText(layout, color = color.copy(alpha = color.alpha * a), topLeft = Offset(x, y))
+            }
+            x += colW
+        }
+        y += rowH
+    }
+}
+
+/** Simple Icons "Netflix" path (CC0), 24-unit viewBox. */
+private const val NETFLIX_N =
+    "M5.398 0v.006c3.028 8.556 5.37 15.175 8.348 23.596 2.344.058 4.85.398 4.854.398-2.8-7.924-5.923-16.747-8.487-24zm8.489 0v9.63L18.6 22.951c-.043-7.86-.004-15.913.002-22.95zM5.398 1.05V24c1.873-.225 2.81-.312 4.715-.398v-9.22z"
+
+private val netflixN: Path by lazy { PathParser.createPathFromPathData(NETFLIX_N).asComposePath() }
+
+/**
+ * Netflix, after its 2019 ident (Imaginary Forces): the ribbon N splitting into thin bands of light.
+ * A giant N on the right filled with vertical light streaks, mostly reds with a few spectrum accents,
+ * over a deep red base, with a red bloom pooled under it. Drawn in full colour (not a tinted mask).
+ */
+internal fun DrawScope.drawLumiereN() {
+    val w = size.width
+    val h = size.height
+    val rnd = Random(5)
+    // The whole N stays on screen, top right, so it reads as the letter (the tile row is glass over it).
+    val nHeight = h * 0.76f
+    val s = nHeight / 24f
+    val left = w * 0.70f - 5.4f * s
+    val top = h * 0.14f
+
+    // Bloom under the letter.
+    drawCircle(
+        Brush.radialGradient(
+            listOf(Color(0xFFE50914).copy(alpha = 0.34f), Color(0xFFE50914).copy(alpha = 0.08f), Color.Transparent),
+            center = Offset(left + 12f * s, top + nHeight * 0.85f),
+            radius = h * 0.75f,
+        ),
+        radius = h * 0.75f,
+        center = Offset(left + 12f * s, top + nHeight * 0.85f),
+    )
+
+    val clip = Path().apply { addPath(netflixN) }
+    translate(left, top) {
+        scale(s, s, pivot = Offset.Zero) {
+            // Deep base so the N reads as a letter.
+            drawPath(clip, Color(0xFF5C030A).copy(alpha = 0.95f))
+        }
+    }
+    val palette = listOf(
+        0xFFE50914, 0xFFE50914, 0xFFE50914, 0xFFE50914, 0xFFB1060F, 0xFFB1060F, 0xFFB1060F,
+        0xFFFF3D57, 0xFFFF3D57, 0xFFFF7A45, 0xFFFFC24B, 0xFFC03CFF, 0xFF4F7BFF, 0xFFFF4FA3,
+    ).map { Color(it) }
+    val scaled = Path().apply {
+        addPath(netflixN)
+        transform(androidx.compose.ui.graphics.Matrix().apply { translate(left, top); scale(s, s) })
+    }
+    clipPathCompat(scaled) {
+        val nLeft = left + 5.2f * s
+        val nRight = left + 18.8f * s
+        var x = nLeft
+        while (x < nRight) {
+            val sw = (1f + rnd.nextFloat() * 3.5f) * density
+            val c = palette[rnd.nextInt(palette.size)]
+            val start = top - nHeight * 0.1f + rnd.nextFloat() * nHeight * 0.6f
+            val len = nHeight * (0.45f + rnd.nextFloat() * 0.65f)
+            val peak = 0.50f + rnd.nextFloat() * 0.40f
+            drawRect(
+                Brush.verticalGradient(
+                    0f to Color.Transparent,
+                    0.35f to c.copy(alpha = peak),
+                    0.65f to c.copy(alpha = peak * 0.85f),
+                    1f to Color.Transparent,
+                    startY = start,
+                    endY = start + len,
+                ),
+                topLeft = Offset(x, start),
+                size = Size(sw, len),
+            )
+            x += sw + (0.5f + rnd.nextFloat() * 2.5f) * density
+        }
+    }
+    // A few long light bands rushing off the right side of the letter.
+    for (i in 0 until 10) {
+        val y = top + nHeight * (0.12f + rnd.nextFloat() * 0.76f)
+        val c = palette[rnd.nextInt(palette.size)]
+        val x0 = left + 15f * s
+        drawRect(
+            Brush.horizontalGradient(
+                listOf(c.copy(alpha = 0.0f), c.copy(alpha = 0.35f), Color.Transparent),
+                startX = x0,
+                endX = w,
+            ),
+            topLeft = Offset(x0, y),
+            size = Size(w - x0, (1f + rnd.nextFloat() * 1.5f) * density),
+        )
+    }
+}
+
+private inline fun DrawScope.clipPathCompat(path: Path, block: DrawScope.() -> Unit) {
+    drawContext.canvas.save()
+    drawContext.canvas.clipPath(path)
+    block()
+    drawContext.canvas.restore()
 }

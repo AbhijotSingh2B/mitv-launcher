@@ -114,7 +114,6 @@ private fun SetupScreen(onOpenHome: () -> Unit, onOpenSettings: () -> Unit) {
                 Spacer(Modifier.height(12.dp))
                 Text("Press OK or ‹ › to change a setting. Back to leave.", style = Body)
                 Spacer(Modifier.height(8.dp))
-                Text("Version " + BuildConfig.VERSION_NAME, style = Body.copy(fontSize = 11.sp, color = Color.White.copy(alpha = 0.5f)))
             }
             LazyColumn(
                 modifier = Modifier.weight(1f).fillMaxSize(),

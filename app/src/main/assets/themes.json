@@ -1,6 +1,8 @@
 [
+  {"id":"info","top":"#141722","bottom":"#040508","accent":"#DCE9FF","pattern":"lightgrid"},
+  {"id":"nuvio","top":"#4A33C2","bottom":"#0F0A33","accent":"#B4A8FF","pattern":"dots"},
   {"id":"red","top":"#D3173F","bottom":"#7E0A26","accent":"#FFFFFF","pattern":"doodles"},
-  {"id":"dark","top":"#1D1B22","bottom":"#060508","accent":"#E50914","pattern":"ribbons"},
+  {"id":"dark","top":"#141216","bottom":"#030203","accent":"#E50914","pattern":"ribbons"},
   {"id":"blue","top":"#2F52D8","bottom":"#13227A","accent":"#FFFFFF","pattern":"lines"},
   {"id":"purple","top":"#4B3584","bottom":"#140B2B","accent":"#FFFFFF","pattern":"viewfinder"},
   {"id":"grey","top":"#454A53","bottom":"#16191E","accent":"#FFFFFF","pattern":"tiles"},

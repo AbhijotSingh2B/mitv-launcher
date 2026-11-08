@@ -87,4 +87,12 @@ class ConfigTest {
         val json = """[{"id":"red","top":"#C8102E","bottom":"#7A0019","accent":"#FFFFFF","pattern":"dots"}]"""
         assertEquals(ConfigParser.DEFAULT_THEME, ConfigParser.themes(json).themeFor("nope"))
     }
+
+    @Test
+    fun parsesInfoTileAndLightGridPattern() {
+        val tiles = ConfigParser.tiles("""[{"type":"info","theme":"info"}]""")
+        assertEquals(listOf(InfoTileSpec(null, "info")), tiles)
+        val themes = ConfigParser.themes("""[{"id":"info","top":"#14161D","bottom":"#050608","accent":"#FFFFFF","pattern":"lightgrid"}]""")
+        assertEquals(Pattern.LIGHTGRID, themes.getValue("info").pattern)
+    }
 }

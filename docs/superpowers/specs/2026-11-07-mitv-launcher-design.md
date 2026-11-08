@@ -101,6 +101,15 @@ The user directed these during the home-screen redesign. They are part of v1.
   Setup has a button for it too. Settings: night mode, when night starts and ends, the night badge, "Open
   Cameras when the TV turns on" (off by default; it only acts on screen-on or within 5 minutes of boot),
   reduce motion, and a link to Home setup. Settings are stored in SharedPreferences.
+- **Tiles and order (2026-11-08).** About ("i"), Nuvio (`com.nuvio.app`), Cameras (HDMI 2), YouTube, Netflix,
+  Prime Video, All apps, Settings. New tile type `info` opens the **About screen** (what the launcher is, the
+  remote buttons, Menu presses, the tiles, night mode, version); its hint is "Press OK to learn more".
+- **About background (`lightgrid`).** A dark grid of digits that a band of light sweeps across. It animates
+  only while that theme is on screen, and is still under reduce motion.
+- **Netflix background (`ribbons`).** After Netflix's 2019 ident: a large N filled with thin light bands,
+  drawn as one full-colour pattern bitmap.
+- **Settings chooser.** The Settings tile opens a choice of **Launcher settings** or **TV settings** (the
+  Android settings), instead of opening the Android settings directly. Setup no longer shows a version line.
 - **Release build.** R8 minify and resource shrinking (needed for smooth focus moves on the 1 GB TV), signed
   with the local debug key for sideloading.
 

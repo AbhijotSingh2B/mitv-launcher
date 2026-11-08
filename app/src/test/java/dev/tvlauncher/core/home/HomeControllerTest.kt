@@ -8,6 +8,7 @@ import dev.tvlauncher.core.catalog.InstalledApp
 import dev.tvlauncher.core.config.AllAppsTileSpec
 import dev.tvlauncher.core.config.AppTileSpec
 import dev.tvlauncher.core.config.HdmiTileSpec
+import dev.tvlauncher.core.config.InfoTileSpec
 import dev.tvlauncher.core.config.SettingsTileSpec
 import dev.tvlauncher.core.config.TileSpec
 import org.junit.Assert.assertEquals
@@ -90,6 +91,16 @@ class HomeControllerTest {
     fun allAppsTileReturnsShowAllApps() {
         val c = controller(listOf(AllAppsTileSpec("default")))
         assertEquals(LaunchResult.ShowAllApps, c.open(c.tiles().single()))
+        assertTrue(actions.calls.isEmpty())
+    }
+
+    @Test
+    fun infoTileReturnsShowInfo() {
+        val c = controller(listOf(InfoTileSpec(null, "default")))
+        val tile = c.tiles().single()
+        assertEquals("About", tile.label)
+        assertEquals("info", tile.key)
+        assertEquals(LaunchResult.ShowInfo, c.open(tile))
         assertTrue(actions.calls.isEmpty())
     }
 

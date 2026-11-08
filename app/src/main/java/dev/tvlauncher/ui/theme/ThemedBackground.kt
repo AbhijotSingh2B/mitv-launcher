@@ -1,6 +1,10 @@
 package dev.tvlauncher.ui.theme
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.ShaderBrush
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -51,12 +55,16 @@ private fun patternAlpha(p: Pattern) = when (p) {
     Pattern.RIBBONS -> 0.55f
     Pattern.VIEWFINDER -> 0.30f
     Pattern.TILES -> 0.10f
+    Pattern.LIGHTGRID -> 1f // full strength: dimmed and lit at draw time
     else -> 0.09f
 }
 
+/** Patterns drawn in their own colours (ARGB) instead of as an accent-tinted alpha mask. */
+private fun isColourPattern(p: Pattern) = p == Pattern.RIBBONS
+
 /** Where the pattern starts to show (alpha at the left edge): it stays clear of the title. */
 private fun maskFloor(p: Pattern) = when (p) {
-    Pattern.DIGITS, Pattern.RIBBONS -> 1f // already composed to the right
+    Pattern.DIGITS, Pattern.RIBBONS, Pattern.LIGHTGRID -> 1f // composed already / full screen by design
     Pattern.DOODLES -> 0.22f
     Pattern.VIEWFINDER -> 0.0f
     else -> 0.15f
@@ -74,8 +82,13 @@ private fun renderMask(
     dir: LayoutDirection,
     digits: DigitLayouts,
 ): ImageBitmap {
-    val image = ImageBitmap(w, h, ImageBitmapConfig.Alpha8)
+    val colour = isColourPattern(t.pattern)
+    val image = ImageBitmap(w, h, if (colour) ImageBitmapConfig.Argb8888 else ImageBitmapConfig.Alpha8)
     val size = Size(w.toFloat(), h.toFloat())
+    if (colour) {
+        CanvasDrawScope().draw(density, dir, Canvas(image), size) { drawLumiereN() }
+        return image
+    }
     CanvasDrawScope().draw(density, dir, Canvas(image), size) {
         val floor = maskFloor(t.pattern)
         drawContext.canvas.saveLayer(Rect(0f, 0f, size.width, size.height), Paint())
@@ -110,6 +123,7 @@ fun ThemedBackground(
     modifier: Modifier = Modifier,
     prefetch: List<ThemeSpec> = emptyList(),
     night: Boolean = false,
+    reduceMotion: Boolean = false,
 ) {
     val measurer = rememberTextMeasurer()
     // Ten layouts (digits 0-9) measured once and shared by every theme; the cell list is seeded.
@@ -156,7 +170,24 @@ fun ThemedBackground(
             to = theme
             progress.snapTo(0f)
             progress.animateTo(1f, tween(400))
+            from = to // fade done: nothing of the old theme is on screen any more
         }
+
+        // About theme: a wave of light sweeps over the digit grid. It only runs while that theme is
+        // on screen, so other tiles cost nothing extra per frame. Reduced motion: a still light.
+        val lightOnScreen = to.pattern == Pattern.LIGHTGRID || from.pattern == Pattern.LIGHTGRID
+        val sweep = remember { Animatable(0.62f) }
+        LaunchedEffect(lightOnScreen, reduceMotion) {
+            if (!lightOnScreen || reduceMotion) {
+                sweep.snapTo(0.62f)
+                return@LaunchedEffect
+            }
+            while (true) {
+                sweep.snapTo(0f)
+                sweep.animateTo(1f, tween(7000, easing = LinearEasing))
+            }
+        }
+        val bitmapShaders = remember(w, h) { HashMap<String, android.graphics.BitmapShader>() }
         // Night: a dimmer room light, quieter patterns and a deeper vignette.
         val glowScale = if (night) 0.35f else 1f
         val patternScale = if (night) 0.6f else 1f
@@ -185,9 +216,54 @@ fun ThemedBackground(
                 fun DrawScope.theme(t: ThemeSpec, alpha: Float) {
                     val g = gradients.getOrPut(t.id) { Brush.verticalGradient(listOf(Color(t.top), Color(t.bottom))) }
                     drawRect(g, alpha = alpha)
-                    masks[t.pattern.name]?.let { m ->
-                        val tint = tints.getOrPut(t.id) { ColorFilter.tint(Color(t.accent), BlendMode.SrcIn) }
-                        drawImage(m, alpha = alpha * patternScale, colorFilter = tint)
+                    val m = masks[t.pattern.name] ?: return
+                    when {
+                        isColourPattern(t.pattern) -> drawImage(m, alpha = alpha * patternScale)
+                        t.pattern == Pattern.LIGHTGRID -> {
+                            val tint = tints.getOrPut(t.id) { ColorFilter.tint(Color(t.accent), BlendMode.SrcIn) }
+                            // The dark grid, barely there...
+                            drawImage(m, alpha = alpha * 0.05f * patternScale, colorFilter = tint)
+                            // ...and the light: a tilted band, clipped to the digits by the mask (one draw, no layer).
+                            val bs = bitmapShaders.getOrPut(t.pattern.name) {
+                                android.graphics.BitmapShader(
+                                    m.asAndroidBitmap(),
+                                    android.graphics.Shader.TileMode.CLAMP,
+                                    android.graphics.Shader.TileMode.CLAMP,
+                                )
+                            }
+                            val ph = sweep.value
+                            val bw = sw * 0.20f
+                            val cx = -sw * 0.35f + ph * sw * 1.7f
+                            // A gentle wave: the band's tilt swings as it travels.
+                            val tilt = 0.36f + 0.22f * kotlin.math.sin(ph * 6.2832f)
+                            val light = Color(t.accent).copy(alpha = 1f)
+                            val band = android.graphics.LinearGradient(
+                                cx - bw, -bw * tilt, cx + bw, bw * tilt,
+                                intArrayOf(
+                                    0,
+                                    light.copy(alpha = 0.22f).toArgb(),
+                                    light.toArgb(),
+                                    light.copy(alpha = 0.22f).toArgb(),
+                                    0,
+                                ),
+                                floatArrayOf(0f, 0.3f, 0.5f, 0.7f, 1f),
+                                android.graphics.Shader.TileMode.CLAMP,
+                            )
+                            val lit = android.graphics.ComposeShader(bs, band, android.graphics.PorterDuff.Mode.SRC_IN)
+                            // A faint wash of the same light over everything, so it reads as light passing by.
+                            val wash = android.graphics.LinearGradient(
+                                cx - bw * 1.6f, -bw * tilt * 1.6f, cx + bw * 1.6f, bw * tilt * 1.6f,
+                                intArrayOf(0, light.copy(alpha = 0.07f).toArgb(), 0),
+                                floatArrayOf(0f, 0.5f, 1f),
+                                android.graphics.Shader.TileMode.CLAMP,
+                            )
+                            drawRect(ShaderBrush(wash), alpha = alpha * patternScale)
+                            drawRect(ShaderBrush(lit), alpha = alpha * patternScale)
+                        }
+                        else -> {
+                            val tint = tints.getOrPut(t.id) { ColorFilter.tint(Color(t.accent), BlendMode.SrcIn) }
+                            drawImage(m, alpha = alpha * patternScale, colorFilter = tint)
+                        }
                     }
                 }
                 onDrawBehind {

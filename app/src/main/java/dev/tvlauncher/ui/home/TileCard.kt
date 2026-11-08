@@ -62,6 +62,7 @@ fun TileCard(
     icon: (String) -> ImageBitmap?,
     reduceMotion: Boolean,
     night: Boolean = false,
+    enabled: Boolean = true,
     onFocused: () -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -125,7 +126,7 @@ fun TileCard(
                 }
                 if (t > 0f) drawRoundRect(focusFill.copy(alpha = t), cornerRadius = r)
             }
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick),
+            .clickable(interactionSource = interaction, indication = null, enabled = enabled, onClick = onClick),
     ) {
         val markColor = lerp(Color.White.copy(alpha = restMark), mark?.brand ?: Ink, t)
         when {

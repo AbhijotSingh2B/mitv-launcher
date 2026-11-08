@@ -1,8 +1,10 @@
 [
+  {"type":"info","theme":"info"},
+  {"type":"app","package":"com.nuvio.app","label":"Nuvio","theme":"nuvio"},
+  {"type":"hdmi","port":2,"label":"Cameras","theme":"purple"},
   {"type":"app","package":"com.google.android.youtube.tv","label":"YouTube","theme":"red"},
   {"type":"app","package":"com.netflix.ninja","label":"Netflix","theme":"dark"},
   {"type":"app","package":"com.amazon.amazonvideo.livingroom","label":"Prime Video","theme":"blue"},
-  {"type":"hdmi","port":2,"label":"Cameras","theme":"purple"},
   {"type":"allApps","theme":"grey"},
   {"type":"settings","theme":"grid"}
 ]

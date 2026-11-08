@@ -84,6 +84,7 @@ fun DrawScope.drawPattern(pattern: Pattern, color: Color, digits: DigitLayouts? 
         Pattern.RIBBONS -> drawRibbons(color)
         Pattern.VIEWFINDER -> drawViewfinder(color)
         Pattern.TILES -> drawAppGrid(color)
+        Pattern.LIGHTGRID -> if (digits != null) drawNumberGrid(color, digits)
         Pattern.LINES -> drawFlowLines(color)
         Pattern.DIGITS -> {
             if (digits == null) return

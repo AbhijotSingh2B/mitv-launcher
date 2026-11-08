@@ -73,6 +73,8 @@ private object Marks {
         )
     }
 
+    val info by lazy { Mark(dev.tvlauncher.ui.info.INFO_ICON, null) }
+
     val byPackage: Map<String, () -> Mark> = mapOf(
         "com.google.android.youtube.tv" to { youtube },
         "com.google.android.youtube.tvkids" to { youtube },
@@ -87,6 +89,7 @@ fun markFor(tile: HomeTile): Mark? = when (val t = tile.target) {
     is Target.Hdmi, null -> if (tile.label.contains("cam", ignoreCase = true)) Marks.videocam else Marks.tv
     Target.AllApps -> Marks.apps
     Target.Settings -> Marks.settings
+    Target.Info -> Marks.info
 }
 
 /** Draws [mark] in [color], fitted and centred in the composable's bounds. */

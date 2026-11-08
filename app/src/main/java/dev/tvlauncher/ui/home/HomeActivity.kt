@@ -18,6 +18,10 @@ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.asImageBitmap
 import dev.tvlauncher.App
+import dev.tvlauncher.ui.info.AboutScreen
+import dev.tvlauncher.core.home.Target
+import dev.tvlauncher.core.config.ConfigParser
+import dev.tvlauncher.BuildConfig
 import dev.tvlauncher.core.catalog.InstalledApp
 import dev.tvlauncher.core.home.LaunchResult
 import dev.tvlauncher.ui.apps.AllAppsScreen
@@ -38,15 +42,26 @@ class HomeActivity : ComponentActivity() {
         if (savedInstanceState == null) app.maybeOpenCamerasAtStartup()
         setContent {
             var showAllApps by rememberSaveable { mutableStateOf(false) }
+            var showInfo by rememberSaveable { mutableStateOf(false) }
             // Last loaded app list, shown instantly on repeat visits while a fresh list loads.
             var appsCache by remember { mutableStateOf<List<InstalledApp>?>(null) }
             val holder = rememberSaveableStateHolder()
             val icon: (String) -> androidx.compose.ui.graphics.ImageBitmap? =
                 remember { { pkg -> app.catalog.icon(pkg)?.asImageBitmap() } }
             // Home pressed while on All apps returns to home.
-            LaunchedEffect(homeSignal) { if (homeSignal > 0) showAllApps = false }
+            LaunchedEffect(homeSignal) {
+                if (homeSignal > 0) {
+                    showAllApps = false
+                    showInfo = false
+                }
+            }
 
-            if (showAllApps) {
+            if (showInfo) {
+                val infoTheme = remember {
+                    app.controller.tiles().firstOrNull { it.target == Target.Info }?.theme ?: ConfigParser.DEFAULT_THEME
+                }
+                AboutScreen(theme = infoTheme, version = BuildConfig.VERSION_NAME, onBack = { showInfo = false })
+            } else if (showAllApps) {
                 var failure by remember { mutableStateOf<String?>(null) }
                 LaunchedEffect(failure) {
                     if (failure != null) {
@@ -76,6 +91,10 @@ class HomeActivity : ComponentActivity() {
                         icon = icon,
                         onShowAllApps = { showAllApps = true },
                         homeSignal = homeSignal,
+                        onShowInfo = { showInfo = true },
+                        onOpenLauncherSettings = {
+                            startActivity(Intent(this@HomeActivity, LauncherSettingsActivity::class.java))
+                        },
                     )
                 }
             }

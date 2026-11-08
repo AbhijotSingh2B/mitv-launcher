@@ -33,7 +33,10 @@ data class SettingsTileSpec(override val theme: String) : TileSpec {
     override val label: String? = "Settings"
 }
 
-enum class Pattern { NONE, GRID, DOTS, RINGS, DIGITS, DOODLES, LINES, RIBBONS, VIEWFINDER, TILES }
+/** The "i" tile: opens the About screen (what the launcher is and how to use it). */
+data class InfoTileSpec(override val label: String?, override val theme: String) : TileSpec
+
+enum class Pattern { NONE, GRID, DOTS, RINGS, DIGITS, DOODLES, LINES, RIBBONS, VIEWFINDER, TILES, LIGHTGRID }
 
 data class ThemeSpec(
     val id: String,
@@ -80,6 +83,7 @@ object ConfigParser {
                 "hdmi" -> HdmiTileSpec(o.int("port") ?: return null, label, theme)
                 "allApps" -> AllAppsTileSpec(theme)
                 "settings" -> SettingsTileSpec(theme)
+                "info" -> InfoTileSpec(label, theme)
                 else -> null
             }
         } catch (e: IllegalArgumentException) {

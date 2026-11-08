@@ -7,6 +7,7 @@ import dev.tvlauncher.core.catalog.matchHdmiInput
 import dev.tvlauncher.core.config.AllAppsTileSpec
 import dev.tvlauncher.core.config.AppTileSpec
 import dev.tvlauncher.core.config.HdmiTileSpec
+import dev.tvlauncher.core.config.InfoTileSpec
 import dev.tvlauncher.core.config.SettingsTileSpec
 import dev.tvlauncher.core.config.ThemeSpec
 import dev.tvlauncher.core.config.TileSpec
@@ -17,6 +18,7 @@ sealed interface Target {
     data class Hdmi(val inputId: String) : Target
     data object AllApps : Target
     data object Settings : Target
+    data object Info : Target
 }
 
 data class HomeTile(
@@ -31,6 +33,7 @@ data class HomeTile(
 sealed interface LaunchResult {
     data object Opened : LaunchResult
     data object ShowAllApps : LaunchResult
+    data object ShowInfo : LaunchResult
     data class Failed(val message: String) : LaunchResult
 }
 
@@ -91,6 +94,7 @@ class DefaultHomeController(
                 }
                 is AllAppsTileSpec -> HomeTile("allApps", spec.label ?: "All apps", HINT_OPEN, theme, Target.AllApps, true)
                 is SettingsTileSpec -> HomeTile("settings", spec.label ?: "Settings", HINT_OPEN, theme, Target.Settings, true)
+                is InfoTileSpec -> HomeTile("info", spec.label ?: "About", HINT_INFO, theme, Target.Info, true)
             }
         }
     }
@@ -101,6 +105,7 @@ class DefaultHomeController(
         val ok = when (val target = tile.target) {
             null -> false
             Target.AllApps -> return LaunchResult.ShowAllApps
+            Target.Info -> return LaunchResult.ShowInfo
             is Target.App -> safely { actions.openApp(target.packageName) }
             is Target.Hdmi -> safely { actions.switchInput(target.inputId) }
             Target.Settings -> safely { actions.openSettings() }
@@ -115,6 +120,7 @@ class DefaultHomeController(
 
     private companion object {
         const val HINT_OPEN = "Press OK to open"
+        const val HINT_INFO = "Press OK to learn more"
         const val HINT_SWITCH = "Press OK to switch"
         const val HINT_UNAVAILABLE = "Not available on this TV"
     }

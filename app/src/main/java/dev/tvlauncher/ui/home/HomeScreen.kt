@@ -64,6 +64,7 @@ import dev.tvlauncher.core.config.ConfigParser
 import dev.tvlauncher.core.home.HomeController
 import dev.tvlauncher.core.home.HomeTile
 import dev.tvlauncher.core.home.LaunchResult
+import dev.tvlauncher.core.home.Target
 import dev.tvlauncher.ui.theme.EaseOut
 import dev.tvlauncher.ui.theme.Ink
 import dev.tvlauncher.ui.theme.Poppins
@@ -111,10 +112,14 @@ fun HomeScreen(
     icon: (String) -> ImageBitmap?,
     onShowAllApps: () -> Unit,
     homeSignal: Int = 0,
+    onShowInfo: () -> Unit = {},
+    onOpenLauncherSettings: () -> Unit = {},
 ) {
     var tiles by remember { mutableStateOf(controller.tiles()) }
     var focusedKey by rememberSaveable { mutableStateOf<String?>(null) }
     var switchingTo by remember { mutableStateOf<HomeTile?>(null) }
+    // The Settings tile opens a chooser (Launcher settings or TV settings) instead of TV settings directly.
+    var chooserFor by remember { mutableStateOf<HomeTile?>(null) }
     var failure by remember { mutableStateOf<String?>(null) }
     var focusTick by remember { mutableIntStateOf(0) }
     val listState = rememberLazyListState()
@@ -177,6 +182,7 @@ fun HomeScreen(
             if (night) current.forNight() else current,
             prefetch = allThemes,
             night = night,
+            reduceMotion = reduceMotion,
         )
 
         // Title, hint and row share one column anchored so the tiles end at 80% of the height.
@@ -209,13 +215,19 @@ fun HomeScreen(
                 icon = icon,
                 reduceMotion = reduceMotion,
                 night = night,
+                enabled = chooserFor == null,
                 state = listState,
                 onFocused = { focusedKey = it.key },
                 onOpen = { tile ->
-                    when (val r = controller.open(tile)) {
-                        LaunchResult.Opened -> switchingTo = tile
-                        LaunchResult.ShowAllApps -> onShowAllApps()
-                        is LaunchResult.Failed -> failure = r.message
+                    if (tile.target == Target.Settings) {
+                        chooserFor = tile
+                    } else {
+                        when (val r = controller.open(tile)) {
+                            LaunchResult.Opened -> switchingTo = tile
+                            LaunchResult.ShowAllApps -> onShowAllApps()
+                            LaunchResult.ShowInfo -> onShowInfo()
+                            is LaunchResult.Failed -> failure = r.message
+                        }
                     }
                 },
             )
@@ -246,6 +258,29 @@ fun HomeScreen(
             )
         }
 
+        chooserFor?.let { settingsTile ->
+            SettingsChooser(
+                night = night,
+                reduceMotion = reduceMotion,
+                onLauncherSettings = {
+                    chooserFor = null
+                    onOpenLauncherSettings()
+                },
+                onTvSettings = {
+                    chooserFor = null
+                    when (val r = controller.open(settingsTile)) {
+                        LaunchResult.Opened -> switchingTo = settingsTile
+                        is LaunchResult.Failed -> failure = r.message
+                        else -> Unit
+                    }
+                },
+                onDismiss = {
+                    chooserFor = null
+                    focusTick++
+                },
+            )
+        }
+
         switchingTo?.let { SwitchingOverlay(it, h, reduceMotion) }
     }
 }
@@ -259,6 +294,7 @@ private fun TileRow(
     icon: (String) -> ImageBitmap?,
     reduceMotion: Boolean,
     night: Boolean,
+    enabled: Boolean,
     state: androidx.compose.foundation.lazy.LazyListState,
     onFocused: (HomeTile) -> Unit,
     onOpen: (HomeTile) -> Unit,
@@ -291,6 +327,7 @@ private fun TileRow(
                     icon = icon,
                     reduceMotion = reduceMotion,
                     night = night,
+                    enabled = enabled,
                     onFocused = remember(tile) { { onFocused(tile) } },
                     onClick = remember(tile) { { onOpen(tile) } },
                     modifier = if (tile.key == selectedKey) Modifier.focusRequester(requester) else Modifier,
