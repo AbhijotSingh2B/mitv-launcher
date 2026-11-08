@@ -101,6 +101,8 @@ class HomeControllerTest {
         assertEquals("About", tile.label)
         assertEquals("info", tile.key)
         assertEquals(LaunchResult.ShowInfo, c.open(tile))
+        assertEquals("Press OK to learn more", tile.hint)
+        assertEquals("About", tile.label)
         assertTrue(actions.calls.isEmpty())
     }
 
@@ -162,5 +164,24 @@ class HomeControllerTest {
         val c = controller(listOf(SettingsTileSpec("default")))
         assertEquals(LaunchResult.Opened, c.open(c.tiles().single()))
         assertEquals(listOf("settings"), actions.calls)
+    }
+
+    @Test
+    fun throwingCatalogsHideTheirTilesButKeepTheRest() {
+        val apps = object : AppCatalog {
+            override fun installedTvApps(): List<InstalledApp> = throw RuntimeException("package manager died")
+            override fun icon(packageName: String): Bitmap? = null
+        }
+        val inputs = object : InputCatalog {
+            override fun hdmiInputs(): List<HdmiInput> = throw SecurityException("no TV input access")
+        }
+        val c = DefaultHomeController(
+            listOf(AppTileSpec("com.yt", null, "default"), HdmiTileSpec(1, null, "default"), SettingsTileSpec("default")),
+            emptyMap(), apps, inputs, actions,
+        )
+        val tiles = c.tiles()
+        assertEquals(listOf("hdmi:1", "settings"), tiles.map { it.key })
+        assertFalse(tiles.first().available)
+        assertTrue(c.allApps().isEmpty())
     }
 }

@@ -103,8 +103,8 @@ private val BodyStyle = TextStyle(
 
 /**
  * Reel-style home: themed background, the focused tile's title and hint, one row of square tiles,
- * and a clock. [homeSignal] increments when Home is pressed while already home; focus then returns
- * to the first tile.
+ * and a clock. [homeSignal] increments when Home is pressed while this screen is already in front:
+ * an open Settings chooser closes (focus stays on Settings), otherwise focus returns to the first tile.
  */
 @Composable
 fun HomeScreen(
@@ -148,8 +148,12 @@ fun HomeScreen(
     LaunchedEffect(homeSignal) {
         if (homeSignal != handledSignal) {
             handledSignal = homeSignal
-            focusedKey = tiles.firstOrNull()?.key
-            listState.scrollToItem(0)
+            if (chooserFor != null) {
+                chooserFor = null
+            } else {
+                focusedKey = tiles.firstOrNull()?.key
+                listState.scrollToItem(0)
+            }
             focusTick++
         }
     }
@@ -270,7 +274,10 @@ fun HomeScreen(
                     chooserFor = null
                     when (val r = controller.open(settingsTile)) {
                         LaunchResult.Opened -> switchingTo = settingsTile
-                        is LaunchResult.Failed -> failure = r.message
+                        is LaunchResult.Failed -> {
+                            failure = r.message
+                            focusTick++ // the chooser held focus; give it back to the Settings tile
+                        }
                         else -> Unit
                     }
                 },

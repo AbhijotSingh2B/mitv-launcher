@@ -42,7 +42,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.tv.material3.Text
-import dev.tvlauncher.BuildConfig
 import dev.tvlauncher.core.home.HomeSwitch
 import dev.tvlauncher.core.settings.LauncherSettings
 import dev.tvlauncher.ui.home.Clock

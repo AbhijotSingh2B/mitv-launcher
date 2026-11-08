@@ -32,10 +32,16 @@ import dev.tvlauncher.ui.settings.LauncherSettingsActivity
 import dev.tvlauncher.ui.setup.SetupActivity
 
 class HomeActivity : ComponentActivity() {
+    // Increments on every Home press that reaches this activity. Saved, so a recreated activity
+    // doesn't replay or lose presses against the saved "handled" counters below.
     private var homeSignal by mutableIntStateOf(0)
+    // Whether the latest Home press came while home was already in front (Launcher3's rule): only
+    // then does focus jump back to the first tile. Coming back from an app keeps your place.
+    private var homeWasInFront = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        homeSignal = savedInstanceState?.getInt(KEY_HOME_SIGNAL) ?: 0
         // Back on the home screen does nothing.
         onBackPressedDispatcher.addCallback(this) { }
         val app = application as App
@@ -48,11 +54,19 @@ class HomeActivity : ComponentActivity() {
             val holder = rememberSaveableStateHolder()
             val icon: (String) -> androidx.compose.ui.graphics.ImageBitmap? =
                 remember { { pkg -> app.catalog.icon(pkg)?.asImageBitmap() } }
-            // Home pressed while on All apps returns to home.
+            // Signal for HomeScreen: Home pressed while the home row itself was in front.
+            var screenSignal by rememberSaveable { mutableIntStateOf(0) }
+            var handledHome by rememberSaveable { mutableIntStateOf(homeSignal) }
+            // Any Home press closes All apps or About. A press on the home row itself goes to HomeScreen.
             LaunchedEffect(homeSignal) {
-                if (homeSignal > 0) {
-                    showAllApps = false
-                    showInfo = false
+                if (homeSignal != handledHome) {
+                    handledHome = homeSignal
+                    if (showAllApps || showInfo) {
+                        showAllApps = false
+                        showInfo = false
+                    } else if (homeWasInFront) {
+                        screenSignal++
+                    }
                 }
             }
 
@@ -90,7 +104,7 @@ class HomeActivity : ComponentActivity() {
                         controller = app.controller,
                         icon = icon,
                         onShowAllApps = { showAllApps = true },
-                        homeSignal = homeSignal,
+                        homeSignal = screenSignal,
                         onShowInfo = { showInfo = true },
                         onOpenLauncherSettings = {
                             startActivity(Intent(this@HomeActivity, LauncherSettingsActivity::class.java))
@@ -101,10 +115,21 @@ class HomeActivity : ComponentActivity() {
         }
     }
 
-    // Home pressed while home is already showing: singleTask delivers the intent here.
+    // singleTask delivers every Home press here, whether home was in front or behind another app.
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        homeWasInFront = hasWindowFocus() &&
+            (intent.flags and Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT) != Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT
         homeSignal++
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt(KEY_HOME_SIGNAL, homeSignal)
+    }
+
+    private companion object {
+        const val KEY_HOME_SIGNAL = "home_signal"
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {

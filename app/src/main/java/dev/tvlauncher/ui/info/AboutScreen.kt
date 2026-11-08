@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Text
 import dev.tvlauncher.core.config.ThemeSpec
+import dev.tvlauncher.core.settings.NightMode
 import dev.tvlauncher.ui.home.Clock
 import dev.tvlauncher.ui.home.Mark
 import dev.tvlauncher.ui.home.MarkImage
@@ -90,6 +91,16 @@ fun AboutScreen(theme: ThemeSpec, version: String, onBack: () -> Unit) {
     val showBadge = rememberSetting { it.showNightBadge }
     val start = rememberSetting { it.nightStartHour }
     val end = rememberSetting { it.nightEndHour }
+    val mode = rememberSetting { it.nightMode }
+    val badgeText = if (showBadge) ", and a moon shows next to the clock" else ""
+    val nightCopy = when (mode) {
+        NightMode.AUTO -> "From ${hourLabel(start)} to ${hourLabel(end)} the colours dim so they're easy on your eyes$badgeText. " +
+            "Change the hours, or set it to always on or off, in Launcher settings."
+        NightMode.ON -> "Night mode is always on: the colours stay dim so they're easy on your eyes$badgeText. " +
+            "Set it to Auto or Off in Launcher settings."
+        NightMode.OFF -> "Night mode is off. Turn it on in Launcher settings to dim the colours at night, " +
+            "automatically or all the time."
+    }
     val info = remember { Mark(INFO_ICON, null) }
 
     val sections = listOf(
@@ -131,10 +142,7 @@ fun AboutScreen(theme: ThemeSpec, version: String, onBack: () -> Unit) {
         Section(
             "Night mode",
             listOf(
-                Para(
-                    "From ${hourLabel(start)} to ${hourLabel(end)} the colours dim so they're easy on your eyes, " +
-                        "and a moon shows next to the clock. Change the hours, or turn it on or off, in Launcher settings.",
-                ),
+                Para(nightCopy),
             ),
         ),
         Section(

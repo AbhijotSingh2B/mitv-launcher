@@ -59,8 +59,9 @@ class DefaultHomeController(
 ) : HomeController {
 
     override fun tiles(): List<HomeTile> {
-        val installed = apps.installedTvApps().associateBy { it.packageName }
-        val hdmi = inputs.hdmiInputs()
+        // A package-manager or TV-input failure hides those tiles instead of crashing the home screen.
+        val installed = readSafely { apps.installedTvApps() }.associateBy { it.packageName }
+        val hdmi = readSafely { inputs.hdmiInputs() }
         return buildTiles(installed, hdmi).distinctBy { it.key }
     }
 
@@ -99,7 +100,13 @@ class DefaultHomeController(
         }
     }
 
-    override fun allApps(): List<InstalledApp> = apps.installedTvApps()
+    override fun allApps(): List<InstalledApp> = readSafely { apps.installedTvApps() }
+
+    private fun <T> readSafely(block: () -> List<T>): List<T> = try {
+        block()
+    } catch (e: Exception) {
+        emptyList()
+    }
 
     override fun open(tile: HomeTile): LaunchResult {
         val ok = when (val target = tile.target) {

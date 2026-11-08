@@ -16,6 +16,7 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
@@ -44,6 +45,8 @@ import dev.tvlauncher.core.config.Pattern
 import dev.tvlauncher.core.config.ThemeSpec
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 private fun patternAlpha(p: Pattern) = when (p) {
@@ -112,6 +115,17 @@ private fun renderMask(
 }
 
 /**
+ * Pattern masks for the whole process, keyed by pattern and size. Home and the About screen share them,
+ * so opening About or coming back home never re-renders a mask. One lock serialises every render, so
+ * the shared digit layouts are never drawn on two threads at once, even by two backgrounds.
+ */
+private object MaskCache {
+    val masks = mutableStateMapOf<String, ImageBitmap>()
+    val renderLock = Mutex()
+    fun key(p: Pattern, w: Int, h: Int) = "${p.name}@${w}x$h"
+}
+
+/**
  * Full-screen themed background: vertical gradient, a soft light from the upper left, the theme's
  * pattern and a vignette. Gradients are drawn live on the GPU; each pattern is pre-rendered once,
  * off the main thread, for [theme] and every theme in [prefetch], so moving focus never rasterises
@@ -137,24 +151,34 @@ fun ThemedBackground(
     BoxWithConstraints(modifier.fillMaxSize()) {
         val w = constraints.maxWidth.coerceAtLeast(1)
         val h = constraints.maxHeight.coerceAtLeast(1)
-        val masks = remember(w, h) { mutableStateMapOf<String, ImageBitmap>() }
+        fun maskOf(p: Pattern): ImageBitmap? = MaskCache.masks[MaskCache.key(p, w, h)]
         // Keyed so ordinary focus moves (theme already in prefetch) never restart the renders.
         val extra = theme.takeIf { th -> prefetch.none { it.pattern == th.pattern } }
         val wanted = remember(extra, prefetch) {
             (listOfNotNull(extra) + prefetch).distinctBy { it.pattern }.filter { it.pattern != Pattern.NONE }
         }
+        val current by rememberUpdatedState(theme)
         LaunchedEffect(wanted, w, h) {
-            // One at a time, in order, so the shared digit layouts are never drawn on two threads.
-            for (t in wanted) {
-                if (masks.containsKey(t.pattern.name)) continue
+            val failed = HashSet<Pattern>()
+            while (true) {
+                // The theme on screen goes first, so it never waits behind the rest of the row.
+                val next = wanted
+                    .filter { maskOf(it.pattern) == null && it.pattern !in failed }
+                    .sortedByDescending { it.pattern == current.pattern }
+                    .firstOrNull() ?: break
                 val mask = try {
-                    withContext(Dispatchers.Default) { renderMask(t, w, h, density, dir, digits) }
+                    MaskCache.renderLock.withLock {
+                        // Another background may have rendered it while this one waited.
+                        maskOf(next.pattern) ?: withContext(Dispatchers.Default) {
+                            renderMask(next, w, h, density, dir, digits)
+                        }
+                    }
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
                     null
-                } ?: continue
-                masks[t.pattern.name] = mask
+                }
+                if (mask == null) failed += next.pattern else MaskCache.masks[MaskCache.key(next.pattern, w, h)] = mask
             }
         }
 
@@ -216,7 +240,7 @@ fun ThemedBackground(
                 fun DrawScope.theme(t: ThemeSpec, alpha: Float) {
                     val g = gradients.getOrPut(t.id) { Brush.verticalGradient(listOf(Color(t.top), Color(t.bottom))) }
                     drawRect(g, alpha = alpha)
-                    val m = masks[t.pattern.name] ?: return
+                    val m = maskOf(t.pattern) ?: return
                     when {
                         isColourPattern(t.pattern) -> drawImage(m, alpha = alpha * patternScale)
                         t.pattern == Pattern.LIGHTGRID -> {
