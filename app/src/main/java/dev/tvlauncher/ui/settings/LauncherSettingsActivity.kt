@@ -79,23 +79,9 @@ class LauncherSettingsActivity : ComponentActivity() {
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        @Suppress("DEPRECATION")
-        if (hasFocus) window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
-            View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
-            View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
-            View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
-            View.SYSTEM_UI_FLAG_FULLSCREEN or
-            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+        if (hasFocus) hideSystemBars()
     }
 }
-
-private val SettingsTheme = ThemeSpec("launcher-settings", 0xFF2B2935, 0xFF0C0B11, 0xFFFFFFFF, Pattern.GRID)
-
-private val Title = TextStyle(
-    fontFamily = Poppins, fontWeight = FontWeight.Bold, fontSize = 44.sp, lineHeight = 52.sp,
-    letterSpacing = (-0.8).sp, color = Color.White,
-)
-private val Body = TextStyle(fontFamily = Poppins, fontSize = 13.sp, lineHeight = 18.sp, color = Color.White.copy(alpha = 0.7f))
 
 private fun hourLabel(h: Int): String = when {
     h == 0 -> "12 am"
@@ -111,14 +97,6 @@ private fun <T> List<T>.step(current: T, dir: Int): T {
     val i = indexOf(current).let { if (it < 0) 0 else it }
     return this[(i + dir).mod(size)]
 }
-
-private class SettingItem(
-    val title: String,
-    val description: String?,
-    val value: () -> String,
-    val change: (dir: Int) -> Unit,
-    val isAction: Boolean = false,
-)
 
 @Composable
 fun LauncherSettingsScreen(onOpenSetup: () -> Unit) {
@@ -184,55 +162,5 @@ fun LauncherSettingsScreen(onOpenSetup: () -> Unit) {
             if (night && settings.showNightBadge) NightBadge(Modifier.padding(end = 12.dp))
             Clock()
         }
-    }
-}
-
-@Composable
-private fun SettingRow(row: SettingItem, version: Int, night: Boolean, onChange: (Int) -> Unit, modifier: Modifier = Modifier) {
-    val focusFill = if (night) Color(0xFFD6D3DD) else Color.White
-    val interaction = remember { MutableInteractionSource() }
-    val focused by interaction.collectIsFocusedAsState()
-    val t by animateFloatAsState(if (focused) 1f else 0f, tween(150, easing = Emphasized), label = "row")
-    // [version] changes after every edit, so this row recomposes and re-reads its value.
-    val value = remember(version) { row.value() }
-
-    Row(
-        modifier
-            .fillMaxWidth()
-            .heightIn(min = 60.dp)
-            .graphicsLayer { val s = 1f + 0.02f * t; scaleX = s; scaleY = s }
-            .drawBehind {
-                val r = CornerRadius(14.dp.toPx())
-                drawRoundRect(Color.Black.copy(alpha = 0.26f * (1 - t)), cornerRadius = r)
-                drawRoundRect(Color.White.copy(alpha = 0.06f * (1 - t)), cornerRadius = r)
-                if (t > 0f) drawRoundRect(focusFill.copy(alpha = t), cornerRadius = r)
-            }
-            .onPreviewKeyEvent { e ->
-                if (e.type != KeyEventType.KeyDown || row.isAction) return@onPreviewKeyEvent false
-                when (e.key) {
-                    Key.DirectionLeft -> { onChange(-1); true }
-                    Key.DirectionRight -> { onChange(1); true }
-                    else -> false
-                }
-            }
-            .clickable(interactionSource = interaction, indication = null) { onChange(1) }
-            .padding(horizontal = 18.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(
-                row.title,
-                style = Body.copy(fontSize = 15.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium, color = lerp(Color.White, Ink, t)),
-            )
-            row.description?.let {
-                Text(it, style = Body.copy(fontSize = 11.sp, lineHeight = 15.sp, color = lerp(Color.White.copy(alpha = 0.6f), Ink.copy(alpha = 0.6f), t)))
-            }
-        }
-        val valueColor = lerp(Color.White, Ink, t)
-        Text(
-            if (row.isAction) "$value  ›" else "‹  $value  ›",
-            style = Body.copy(fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = valueColor),
-            modifier = Modifier.padding(start = 16.dp),
-        )
     }
 }
