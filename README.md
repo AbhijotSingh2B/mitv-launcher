@@ -32,7 +32,7 @@ Stock TV launchers are loud: rows of ads, autoplaying trailers and "recommended 
 <td width="50%" valign="top">
 
 ### 🎨 A background for every tile
-Each tile has its own hand-drawn motif. YouTube gets floating media icons, Netflix gets red light ribbons behind a giant N, Prime Video gets flowing lines, Cameras gets a viewfinder and Nuvio gets a soft dot field. Backgrounds cross-fade in 400 ms as you move.
+Each tile has its own hand-drawn motif. YouTube gets floating media icons, Netflix gets red light ribbons behind a giant N, Prime Video gets flowing lines, Cameras gets a viewfinder, and Nuvio gets its logo's triangles rippling out in a cyan-to-pink glow. Backgrounds cross-fade in 400 ms as you move.
 
 </td>
 <td width="50%" valign="top">
@@ -59,14 +59,28 @@ Tiles open apps or switch straight to an HDMI input, for example a CCTV recorder
 <tr>
 <td valign="top">
 
-### ⚙️ Its own settings
-Press **Menu** for launcher settings: night mode and its hours, the night badge, reduce motion, and an option to open Cameras when the TV turns on. The Settings tile lets you choose launcher settings or the TV's own settings.
+### ➕ Any app, your way
+Add any installed app as a tile on the home row, or as a thin shortcut pill under it. Type its name with the built-in remote keyboard in **Launcher settings**. A **TV home** pill takes you to the TV's own home screen whenever you need it.
 
 </td>
 <td valign="top">
 
 ### ⚡ Fast on a modest TV
 Gradients are drawn live on the GPU. Patterns are rendered once, off the main thread, into small alpha masks. The release build is minified. The home row runs at a p95 frame time of 73 ms and All apps scrolls at 46 ms on the Mi TV's txlx chip.
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+### 🏠 Truly your home
+With the small **Home button** service switched on, the remote's Home button and the TV starting up both open this launcher instead of Google TV Home or PatchWall. Nothing is disabled or uninstalled.
+
+</td>
+<td valign="top">
+
+### ⚙️ Its own settings
+Press **Menu** for launcher settings: night mode and its hours, the night badge, reduce motion, home row apps, shortcuts, start-up and an option to open Cameras when the TV turns on. The Settings tile lets you choose launcher settings or the TV's own settings.
 
 </td>
 </tr>
@@ -100,6 +114,14 @@ Gradients are drawn live on the GPU. Patterns are rendered once, off the main th
 <td align="center"><sub><b>All apps</b></sub></td>
 </tr>
 <tr>
+<td><img src="docs/images/shortcut-pills.jpg" alt="Shortcut pills under the tile row, with TV home selected"></td>
+<td><img src="docs/images/app-picker.jpg" alt="Shortcuts picker: an on-screen A to Z keyboard and a list of apps to add"></td>
+</tr>
+<tr>
+<td align="center"><sub><b>Shortcut pills</b>: TV home and your apps</sub></td>
+<td align="center"><sub><b>Add any app</b>: type with the remote</sub></td>
+</tr>
+<tr>
 <td><img src="docs/images/settings-chooser.jpg" alt="Settings chooser: Launcher settings or TV settings"></td>
 <td><img src="docs/images/setup.jpg" alt="Home setup: switch to use this launcher as the home screen, with how-to steps"></td>
 </tr>
@@ -116,7 +138,8 @@ Gradients are drawn live on the GPU. Patterns are rendered once, off the main th
 | <kbd>◀</kbd> <kbd>▶</kbd> | Move between tiles |
 | <kbd>OK</kbd> | Open the selected tile |
 | <kbd>Back</kbd> | Does nothing, so you never fall out of home by accident |
-| <kbd>Home</kbd> | Always brings you back |
+| <kbd>▼</kbd> | Shortcut pills: TV home and the apps you added |
+| <kbd>Home</kbd> | Brings you back home and closes any overlay. If you were already home, focus jumps to the first tile |
 | <kbd>Menu</kbd> | Press: launcher settings · Hold: home setup |
 
 ## Install
@@ -131,13 +154,12 @@ adb connect <tv-ip>:5555
 adb install -r app/build/outputs/apk/release/app-release.apk
 ```
 
-Then on the TV:
+Then make the Home button open it. On many Android TVs, Google TV Home is a system app that always wins the Home button, so the launcher ships a tiny accessibility service for this:
 
-1. Open **Home** from the apps list.
-2. Turn on **Use as home screen**.
-3. Press <kbd>Home</kbd> on the remote, choose **Home** and select **Always**.
+1. On the TV, open **Settings → Device Preferences → Accessibility → Home button for Home launcher** and turn on **Enable**.
+2. Optional, on Xiaomi TVs: in **Settings → Device Preferences → PatchWall**, turn off **Set PatchWall as default launcher**.
 
-If no chooser appears, or you want to undo it, see [docs/SETUP-ON-TV.md](docs/SETUP-ON-TV.md). To go back to the stock launcher, turn **Use as home screen** off or run `adb uninstall dev.tvlauncher`.
+The service only sees button presses and which app is in front. It never reads what's on screen. On TVs whose Home button already shows a chooser, you can instead open **Home Setup**, turn on **Use as home screen**, and pick **Always**. More detail, and how to undo it, is in [docs/SETUP-ON-TV.md](docs/SETUP-ON-TV.md).
 
 ## Make it yours
 
@@ -162,7 +184,7 @@ Everything on the home row comes from two small JSON files. No code changes are 
 {"id":"red","top":"#D3173F","bottom":"#7E0A26","accent":"#FFFFFF","pattern":"doodles"}
 ```
 
-The patterns are `doodles`, `ribbons`, `lines`, `viewfinder`, `dots`, `tiles`, `rings`, `digits`, `lightgrid`, `grid` and `none`. An app that isn't installed is skipped, and a bad entry falls back to safe defaults.
+The patterns are `doodles`, `ribbons`, `prism`, `lines`, `viewfinder`, `dots`, `tiles`, `rings`, `digits`, `lightgrid`, `grid` and `none`. An app that isn't installed is skipped, and a bad entry falls back to safe defaults.
 
 ## How it works
 
@@ -175,8 +197,12 @@ assets/   tiles.json and themes.json
 
 - **The UI is swappable.** Screens only talk to `HomeController`, so the core can be unit-tested without a device.
 - **HDMI switching** opens `TvContract.buildChannelUriForPassthroughInput(id)` with `ACTION_VIEW`.
-- **Backgrounds**: gradient, glow and vignette are drawn live. Each pattern is rendered once into an `ALPHA_8` mask on a background thread and tinted on the GPU. The About screen's light wave is a `ComposeShader` that clips a moving gradient to the digit mask, and it animates only while that screen is on.
-- **Being the home screen** is opt-in. A disabled-by-default `HOME` activity alias is switched on from Setup, so installing the app never takes over your TV.
+- **Backgrounds**: gradient, glow and vignette are drawn live. Each pattern is rendered once on a background thread and cached for the whole app: an `ALPHA_8` mask tinted on the GPU, or a full-colour bitmap for `ribbons` and `prism`. The About screen's light wave is a `ComposeShader` that clips a moving gradient to the digit mask, and it animates only while that screen is on.
+- **Being the home screen** is opt-in. The accessibility service catches short Home presses, and a boot receiver opens the launcher at start-up. Both are off until you switch them on, so installing the app never takes over your TV.
+
+## Changing it with an AI agent
+
+Most people who fork this will change it with an AI coding agent. [AGENTS.md](AGENTS.md) is written for them: the project map, the rules that keep it fast on a TV, step-by-step recipes (add a tile, a theme, a background pattern, a logo, a setting) and a done checklist. Point your agent at it first, or just ask it to "read AGENTS.md, then…".
 
 ## Tech
 
