@@ -7,11 +7,23 @@ import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.addCallback
 import androidx.activity.compose.setContent
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.asImageBitmap
 import dev.tvlauncher.App
+import dev.tvlauncher.core.catalog.InstalledApp
+import dev.tvlauncher.core.home.LaunchResult
+import dev.tvlauncher.ui.apps.AllAppsScreen
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import dev.tvlauncher.ui.settings.LauncherSettingsActivity
 import dev.tvlauncher.ui.setup.SetupActivity
 
@@ -25,12 +37,44 @@ class HomeActivity : ComponentActivity() {
         val app = application as App
         if (savedInstanceState == null) app.maybeOpenCamerasAtStartup()
         setContent {
-            HomeScreen(
-                controller = app.controller,
-                icon = { pkg -> app.catalog.icon(pkg)?.asImageBitmap() },
-                onShowAllApps = { /* Task 7 */ },
-                homeSignal = homeSignal,
-            )
+            var showAllApps by rememberSaveable { mutableStateOf(false) }
+            val holder = rememberSaveableStateHolder()
+            val icon: (String) -> androidx.compose.ui.graphics.ImageBitmap? =
+                remember { { pkg -> app.catalog.icon(pkg)?.asImageBitmap() } }
+            // Home pressed while on All apps returns to home.
+            LaunchedEffect(homeSignal) { if (homeSignal > 0) showAllApps = false }
+
+            if (showAllApps) {
+                var failure by remember { mutableStateOf<String?>(null) }
+                LaunchedEffect(failure) {
+                    if (failure != null) {
+                        delay(3000)
+                        failure = null
+                    }
+                }
+                val apps by produceState(emptyList<InstalledApp>()) {
+                    value = withContext(Dispatchers.IO) { app.controller.allApps() }
+                }
+                AllAppsScreen(
+                    apps = apps,
+                    icon = icon,
+                    onOpen = { a ->
+                        val r = app.controller.openApp(a)
+                        if (r is LaunchResult.Failed) failure = r.message
+                    },
+                    onBack = { showAllApps = false },
+                    failure = failure,
+                )
+            } else {
+                holder.SaveableStateProvider("home") {
+                    HomeScreen(
+                        controller = app.controller,
+                        icon = icon,
+                        onShowAllApps = { showAllApps = true },
+                        homeSignal = homeSignal,
+                    )
+                }
+            }
         }
     }
 
