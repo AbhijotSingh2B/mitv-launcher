@@ -38,6 +38,8 @@ class HomeActivity : ComponentActivity() {
         if (savedInstanceState == null) app.maybeOpenCamerasAtStartup()
         setContent {
             var showAllApps by rememberSaveable { mutableStateOf(false) }
+            // Last loaded app list, shown instantly on repeat visits while a fresh list loads.
+            var appsCache by remember { mutableStateOf<List<InstalledApp>?>(null) }
             val holder = rememberSaveableStateHolder()
             val icon: (String) -> androidx.compose.ui.graphics.ImageBitmap? =
                 remember { { pkg -> app.catalog.icon(pkg)?.asImageBitmap() } }
@@ -52,11 +54,13 @@ class HomeActivity : ComponentActivity() {
                         failure = null
                     }
                 }
-                val apps by produceState(emptyList<InstalledApp>()) {
+                val apps by produceState(appsCache) {
                     value = withContext(Dispatchers.IO) { app.controller.allApps() }
+                    appsCache = value
                 }
                 AllAppsScreen(
-                    apps = apps,
+                    apps = apps.orEmpty(),
+                    loading = apps == null,
                     icon = icon,
                     onOpen = { a ->
                         val r = app.controller.openApp(a)

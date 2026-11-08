@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -117,7 +118,7 @@ private fun SetupScreen(onOpenHome: () -> Unit, onOpenSettings: () -> Unit) {
             }
             LazyColumn(
                 modifier = Modifier.weight(1f).fillMaxSize(),
-                contentPadding = PaddingValues(top = 96.dp, bottom = 64.dp, start = 24.dp, end = 8.dp),
+                contentPadding = PaddingValues(top = 64.dp, bottom = 48.dp, start = 24.dp, end = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 items(rows.size) { i ->
@@ -148,6 +149,8 @@ private fun HowToCard() {
         Modifier
             .fillMaxWidth()
             .padding(top = 6.dp)
+            // Focusable so Down from the last row scrolls the card fully into view on a 540 dp screen.
+            .focusable()
             .background(Color.Black.copy(alpha = 0.26f), RoundedCornerShape(14.dp))
             .background(Color.White.copy(alpha = 0.06f), RoundedCornerShape(14.dp))
             .padding(horizontal = 18.dp, vertical = 14.dp),

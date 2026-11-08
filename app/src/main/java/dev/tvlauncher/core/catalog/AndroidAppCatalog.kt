@@ -11,7 +11,7 @@ import android.util.LruCache
 
 class AndroidAppCatalog(private val context: Context) : AppCatalog {
     private val pm: PackageManager = context.packageManager
-    private val cache = LruCache<String, Bitmap>(24)
+    private val cache = LruCache<String, Bitmap>(48)
 
     override fun installedTvApps(): List<InstalledApp> {
         val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER)

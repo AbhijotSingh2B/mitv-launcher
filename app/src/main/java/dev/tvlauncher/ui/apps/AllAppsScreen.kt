@@ -42,6 +42,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
@@ -81,6 +82,7 @@ private val TitleStyle = TextStyle(
     lineHeight = 52.sp,
     letterSpacing = (-0.8).sp,
     color = Color.White,
+    shadow = Shadow(Color.Black.copy(alpha = 0.22f), Offset(0f, 2f), 16f),
 )
 private val HintStyle = TextStyle(
     fontFamily = Poppins,
@@ -101,6 +103,7 @@ fun AllAppsScreen(
     onOpen: (InstalledApp) -> Unit,
     onBack: () -> Unit,
     failure: String? = null,
+    loading: Boolean = false,
 ) {
     BackHandler(onBack = onBack)
     val night = rememberIsNight()
@@ -122,7 +125,7 @@ fun AllAppsScreen(
             Column(Modifier.padding(start = Gutter, top = 40.dp)) {
                 Text("All apps", style = TitleStyle, maxLines = 1)
                 Text(
-                    "${apps.size} apps · Press OK to open · Back to return",
+                    if (loading) "Loading apps…" else "${apps.size} apps · Press OK to open · Back to return",
                     style = HintStyle,
                     modifier = Modifier.padding(top = 2.dp, start = 2.dp),
                 )

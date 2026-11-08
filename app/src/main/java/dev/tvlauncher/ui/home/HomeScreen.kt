@@ -137,8 +137,12 @@ fun HomeScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
+    // Act on each Home press once. Saved, so re-entering composition (back from All apps) doesn't
+    // re-run the reset and clobber the restored focus.
+    var handledSignal by rememberSaveable { mutableIntStateOf(0) }
     LaunchedEffect(homeSignal) {
-        if (homeSignal > 0) {
+        if (homeSignal != handledSignal) {
+            handledSignal = homeSignal
             focusedKey = tiles.firstOrNull()?.key
             listState.scrollToItem(0)
             focusTick++
